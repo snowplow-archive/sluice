@@ -28,6 +28,35 @@ module Sluice
       RETRIES = 3      # Attempts
       RETRY_WAIT = 10  # Seconds
 
+      # Class to describe an S3 location
+      class S3Location
+        attr_reader :bucket, :dir, :s3location
+
+        # Parameters:
+        # +s3location+:: the s3 location config string e.g. "bucket/directory"
+        def initialize(s3_location)
+          @s3_location = s3_location
+
+          s3_location_match = s3_location.match('^s3n?://([^/]+)/?(.*)/$')
+          raise ArgumentError, 'Bad S3 location %s' % s3_location unless s3_location_match
+
+          @bucket = s3_location_match[1]
+          @dir = s3_location_match[2]
+        end
+
+        def dir_as_path
+          if @dir.length > 0
+            return @dir+'/'
+          else
+            return ''
+          end
+        end
+
+        def to_s
+          @s3_location
+        end
+      end
+
       # TODO: fix this!
       # Helper function to instantiate a new Fog::Storage
       # for S3 based on our config options
