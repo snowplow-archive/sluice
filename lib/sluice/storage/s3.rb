@@ -20,7 +20,6 @@ module Sluice
   module Storage
     module S3
 
-      # TODO: fix new_s3_from so it's freestanding
       # TODO: figure out logging instead of puts
 
       # Constants
@@ -62,13 +61,15 @@ module Sluice
       # for S3 based on our config options
       #
       # Parameters:
-      # +config+:: the hash of configuration options
-      def new_s3_from(config)
+      # +region+:: Amazon S3 region we will be working with
+      # +access_key_id+:: AWS access key ID
+      # +secret_access_key+:: AWS secret access key
+      def new_s3_from(region, access_key_id, secret_access_key)
         Fog::Storage.new({
           :provider => 'AWS',
-          :region => config[:s3][:region],
-          :aws_access_key_id => config[:aws][:access_key_id],
-          :aws_secret_access_key => config[:aws][:secret_access_key]
+          :region => region,
+          :aws_access_key_id => access_key_id,
+          :aws_secret_access_key => secret_access_key
         })
       end
       module_function :new_s3_from
