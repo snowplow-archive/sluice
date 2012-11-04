@@ -28,7 +28,7 @@ module Sluice
       RETRY_WAIT = 10  # Seconds
 
       # Class to describe an S3 location
-      class S3Location
+      class Location
         attr_reader :bucket, :dir, :s3location
 
         # Parameters:
@@ -63,7 +63,7 @@ module Sluice
       # +region+:: Amazon S3 region we will be working with
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
-      def new_s3_from(region, access_key_id, secret_access_key)
+      def new_fog_s3_from(region, access_key_id, secret_access_key)
         Fog::Storage.new({
           :provider => 'AWS',
           :region => region,
