@@ -13,76 +13,22 @@
 # Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
 # License::   Apache License Version 2.0
 
+require 'fog'
+require 'thread'
+
 module Sluice
-  module S3
+  module Storage
+    module S3
 
-      # TODO: make these configurable?
-      S3_CONCURRENCY = 10
-      S3_RETRIES = 3
+      # TODO: fix new_s3_from so it's freestanding
+      # TODO: figure out logging instead of puts
 
-      # Find files within the given date range
-      # (inclusive).
-      #
-      # Parameters:
-      # +start_date+:: start date
-      # +end_date+:: end date
-      # +date_format:: format of date in filenames
-      # +file_ext:: extension on files (if any); include period)   
-      def files_between(start_date, end_date, date_format, file_ext=nil)
+      # Constants
+      CONCURRENCY = 10 # Threads
+      RETRIES = 3      # Attempts
+      RETRY_WAIT = 10  # Seconds
 
-        dates = []
-        Date.parse(start_date).upto(Date.parse(end_date)) do |day|
-          dates << day.strftime(date_format)
-        end
-
-        '(' + dates.join('|') + ')[^/]+%s$' % file_ext
-      end
-      module_function :files_between
-
-      # Find files up to (and including) the given date.
-      #
-      # Returns a regex in a NegativeRegex so that the
-      # matcher can negate the match.
-      #
-      # Parameters:
-      # +end_date+:: end date
-      # +date_format:: format of date in filenames
-      # +file_ext:: extension on files (if any); include period    
-      def files_up_to(end_date)
-
-        # Let's create a black list from the day
-        # after the end_date up to today
-        day_after = Date.parse(end_date) + 1
-        today = Date.today
-
-        dates = []
-        day_after.upto(today) do |day|
-          dates << day.strftime('%Y-%m-%d') # Black list
-        end
-
-        NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$') % file_ext
-      end
-      module_function :files_up_to
-
-      # TODO: fix this one too.
-      # Find files starting from the given date.
-      #
-      # Parameters:
-      # +start_date+:: start date
-      def files_from(start_date)
-
-        # Let's create a white list from the start_date to today
-        today = Date.today
-
-        dates = []
-        Date.parse(start_date).upto(today) do |day|
-          dates << day.strftime('%Y-%m-%d')
-        end
-
-        '(' + dates.join('|') + ')[^/]+\.gz$'
-      end
-      module_function :files_from
-
+      # TODO: fix this!
       # Helper function to instantiate a new Fog::Storage
       # for S3 based on our config options
       #
@@ -141,6 +87,8 @@ module Sluice
       end
       module_function :move_files
 
+      private
+
       # Concurrent file operations between S3 locations. Supports:
       # - Copy
       # - Delete
@@ -159,17 +107,17 @@ module Sluice
         case operation
         when :copy, :move
           if to_location.nil?
-            raise S3FileOperationError "File operation %s requires a to_location to be set" % operation
+            raise StorageOperationError "File operation %s requires a to_location to be set" % operation
           end
         when :delete
           unless to_location.nil?
-            raise S3FileOperationError "File operation %s does not support the to_location argument" % operation
+            raise StorageOperationError "File operation %s does not support the to_location argument" % operation
           end
           if alter_filename_lambda.class == Proc
-            raise S3FileOperationError "File operation %s does not support the alter_filename_lambda argument" % operation
+            raise StorageOperationError "File operation %s does not support the alter_filename_lambda argument" % operation
           end
         else
-          raise S3FileOperationError "File operation %s is unsupported. Try :copy, :delete or :move" % operation
+          raise StorageOperationError "File operation %s is unsupported. Try :copy, :delete or :move" % operation
         end
 
         files_to_process = []
@@ -178,20 +126,20 @@ module Sluice
         complete = false
         marker_opts = {}
 
-        # if an exception is thrown in a thread that isn't handled, die quickly
+        # If an exception is thrown in a thread that isn't handled, die quickly
         Thread.abort_on_exception = true
 
-        # create ruby threads to concurrently execute s3 operations
-        for i in (0...S3_CONCURRENCY)
+        # Create ruby threads to concurrently execute s3 operations
+        for i in (0...CONCURRENCY)
 
-          # each thread pops a file off the files_to_process array, and moves it.
+          # Each thread pops a file off the files_to_process array, and moves it.
           # We loop until there are no more files
           threads << Thread.new do
             loop do
               file = false
               match = false
 
-              # Critical section
+              # Critical section:
               # only allow one thread to modify the array at any time
               mutex.synchronize do
 
@@ -199,9 +147,7 @@ module Sluice
                   if files_to_process.size == 0
                     # s3 batches 1000 files per request
                     # we load up our array with the files to move
-                    #puts "-- loading more results"
                     files_to_process = s3.directories.get(from_location.bucket, :prefix => from_location.dir).files.all(marker_opts)
-                    #puts "-- got #{files_to_process.size} results"
                     # if we don't have any files after the s3 request, we're complete
                     if files_to_process.size == 0
                       complete = true
@@ -224,11 +170,14 @@ module Sluice
                 end
               end
 
-              # if we don't have a match, then we must be complete
+              # If we don't have a match, then we must be complete
               break unless match # exit the thread
 
-              # match the filename, ignoring directory
+              # Match the filename, ignoring directory
               file_match = file.key.match('([^/]+)$')
+
+              # Silently skip any sub-directories in the list
+              break unless file_match
 
               if alter_filename_lambda.class == Proc
                 filename = alter_filename_lambda.call(file_match[1])
@@ -253,9 +202,9 @@ module Sluice
                   file.copy(to_location.bucket, to_location.dir_as_path + filename)
                   puts "      +-> #{to_location.bucket}/#{to_location.dir_as_path}#{filename}"
                 rescue
-                  raise unless i < S3_RETRIES
+                  raise unless i < RETRIES
                   puts "Problem copying #{file.key}. Retrying.", $!, $@
-                  sleep(10)  # give us a bit of time before retrying
+                  sleep(RETRY_WAIT)  # give us a bit of time before retrying
                   i += 1
                   retry
                 end
@@ -268,9 +217,9 @@ module Sluice
                   file.destroy()
                   puts "      x #{from_location.bucket}/#{file.key}"
                 rescue
-                  raise unless i < S3_RETRIES
+                  raise unless i < RETRIES
                   puts "Problem destroying #{file.key}. Retrying.", $!, $@
-                  sleep(10) # give us a bit of time before retrying
+                  sleep(RETRY_WAIT) # Give us a bit of time before retrying
                   i += 1
                   retry
                 end
@@ -279,8 +228,12 @@ module Sluice
           end
         end
 
-        # wait for threads to finish
+        # Wait for threads to finish
         threads.each { |aThread|  aThread.join }
 
       end
       module_function :process_files
+
+    end
+  end
+end
