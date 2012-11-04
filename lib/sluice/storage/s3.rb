@@ -9,7 +9,7 @@
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 
-# Author::    Alex Dean (mailto:support@snowplowanalytics.com), Michael Tibben
+# Authors::    Alex Dean (mailto:support@snowplowanalytics.com), Michael Tibben
 # Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
 # License::   Apache License Version 2.0
 
@@ -56,7 +56,6 @@ module Sluice
         end
       end
 
-      # TODO: fix this!
       # Helper function to instantiate a new Fog::Storage
       # for S3 based on our config options
       #
