@@ -38,6 +38,16 @@ module Sluice
     end
     module_function :files_between
 
+    # Add a trailing slash to a path if missing
+    #
+    # Parameters:
+    # +path+:: path to add a trailing slash to
+    def trail_slash(path)
+
+      path[-1].chr != '/' ? path << '/' : path
+    end
+    module_function :trail_slash
+
     # Find files up to (and including) the given date.
     #
     # Returns a regex in a NegativeRegex so that the
