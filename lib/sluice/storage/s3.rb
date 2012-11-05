@@ -29,6 +29,8 @@ module Sluice
       RETRY_WAIT = 10  # Seconds
 
       # Class to describe an S3 location
+      # TODO: if we are going to impose trailing line-breaks on
+      # buckets, maybe we should make that clearer?
       class Location
         attr_reader :bucket, :dir, :s3location
 
