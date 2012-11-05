@@ -72,7 +72,7 @@ module Sluice
           :aws_secret_access_key => secret_access_key
         })
       end
-      module_function :new_s3_from
+      module_function :new_fog_s3_from
 
       # Determine if a bucket is empty
       #
