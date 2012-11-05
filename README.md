@@ -36,11 +36,11 @@ To contribute:
 
 ## Credits and thanks
 
-SnowPlow::EmrEtlRunner was developed by [Alex Dean] [alexanderdean] ([SnowPlow Analytics] [snowplow-analytics]) and [Michael Tibben] [mtibben] ([99designs] [99designs]).
+Sluice was developed by [Alex Dean] [alexanderdean] ([SnowPlow Analytics] [snowplow-analytics]) and [Michael Tibben] [mtibben] ([99designs] [99designs]).
 
 ## Copyright and license
 
-SnowPlow::EmrEtlRunner is copyright 2012 SnowPlow Analytics Ltd.
+Sluice is copyright 2012 SnowPlow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0] [license] (the "License");
 you may not use this software except in compliance with the License.
