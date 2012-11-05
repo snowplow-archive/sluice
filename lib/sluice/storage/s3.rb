@@ -20,7 +20,8 @@ module Sluice
   module Storage
     module S3
 
-      # TODO: figure out logging instead of puts
+      # TODO: figure out logging instead of puts (https://github.com/snowplow/sluice/issues/2)
+      # TODO: consider moving to OO structure (https://github.com/snowplow/sluice/issues/3)
 
       # Constants
       CONCURRENCY = 10 # Threads
@@ -72,6 +73,16 @@ module Sluice
         })
       end
       module_function :new_s3_from
+
+      # Determine if a bucket is empty
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +location+:: The location to check
+      def is_empty?(s3, location)
+        s3.directories.get(location.bucket, :prefix => location.dir).files().length > 1
+      end
+      module_function :is_empty?
 
       # Delete files from S3 locations concurrently
       #
