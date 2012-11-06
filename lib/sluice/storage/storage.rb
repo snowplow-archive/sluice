@@ -34,7 +34,7 @@ module Sluice
         dates << day.strftime(date_format)
       end
 
-      '(' + dates.join('|') + ')[^/]+%s$' % regexify.call(file_ext)
+      '(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext)
     end
     module_function :files_between
 
@@ -69,7 +69,7 @@ module Sluice
         dates << day.strftime(date_format) # Black list
       end
 
-      NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$') % regexify.call(file_ext)
+      NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$') % regexify(file_ext)
     end
     module_function :files_up_to
 
@@ -89,7 +89,7 @@ module Sluice
         dates << day.strftime(date_format)
       end
 
-      '(' + dates.join('|') + ')[^/]+%s$' % regexify.call(file_ext)
+      '(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext)
     end
     module_function :files_from
 
@@ -97,7 +97,13 @@ module Sluice
 
     # Make a file extension regular expression friendly,
     # adding a starting period (.) if missing 
-    regexify = lambda {|fe| return fe.nil? ? nil : fe[0].chr != '.' ? '\\.' << fe : '\\' << fe}
+    #
+    # Parameters:
+    # +file_ext:: the file extension to make regexp friendly
+    def regexify(file_ext)
+      file_ext.nil? ? nil : file_ext[0].chr != '.' ? '\\.' << file_ext : '\\' << file_ext
+    end
+    module_function :regexify
 
   end
 end
