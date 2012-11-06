@@ -69,7 +69,7 @@ module Sluice
         dates << day.strftime(date_format) # Black list
       end
 
-      NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$') % regexify(file_ext)
+      NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext))
     end
     module_function :files_up_to
 
