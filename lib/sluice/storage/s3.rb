@@ -86,11 +86,26 @@ module Sluice
       end
       module_function :is_empty?
 
+      # Download files from an S3 location to
+      # local storage, concurrently
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +from_location+:: S3Location to delete files from      
+      # +to_directory+:: Local directory to copy files to
+      # +match_regex+:: a regex string to match the files to delete
+      def download_files(s3, from_location, to_directory, match_regex='.+')
+
+        puts "  downloading files from #{from_location} to #{to_directory}"
+        process_files(:download, s3, from_location, to_directory, match_regex)
+      end
+      module_function :download_files    
+
       # Delete files from S3 locations concurrently
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from+:: S3Location to delete files from
+      # +from_location+:: S3Location to delete files from
       # +match_regex+:: a regex string to match the files to delete
       def delete_files(s3, from_location, match_regex='.+')
 
@@ -103,8 +118,8 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from+:: S3Location to copy files from
-      # +to+:: S3Location to copy files to
+      # +from_location+:: S3Location to copy files from
+      # +to_location+:: S3Location to copy files to
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       def copy_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false)
@@ -118,7 +133,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from+:: S3Location to move files from
+      # +from_location+:: S3Location to move files from
       # +to+:: S3Location to move files to
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
@@ -139,21 +154,21 @@ module Sluice
       # Parameters:
       # +operation+:: Operation to perform. :copy, :delete, :move supported
       # +s3+:: A Fog::Storage s3 connection
-      # +from+:: S3Location to process files from
+      # +from_location+:: S3Location to process files from
       # +match_regex+:: a regex string to match the files to process
-      # +to+:: S3Location to process files to
+      # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
-      def process_files(operation, s3, from_location, match_regex='.+', to_location=nil, alter_filename_lambda=false)
+      def process_files(operation, s3, from_location, match_regex='.+', to_loc_or_dir=nil, alter_filename_lambda=false)
 
         # Validate that the file operation makes sense
         case operation
-        when :copy, :move
-          if to_location.nil?
-            raise StorageOperationError "File operation %s requires a to_location to be set" % operation
+        when :copy, :move, :download
+          if to_loc_or_dir.nil?
+            raise StorageOperationError "File operation %s requires the to_loc_or_dir to be set" % operation
           end
         when :delete
-          unless to_location.nil?
-            raise StorageOperationError "File operation %s does not support the to_location argument" % operation
+          unless to_loc_or_dir.nil?
+            raise StorageOperationError "File operation %s does not support the to_loc_or_dir argument" % operation
           end
           if alter_filename_lambda.class == Proc
             raise StorageOperationError "File operation %s does not support the alter_filename_lambda argument" % operation
@@ -213,7 +228,7 @@ module Sluice
               end
 
               # If we don't have a match, then we must be complete
-              break unless match # exit the thread
+              break unless match # Exit the thread
 
               # Match the filename, ignoring directory
               file_match = file.key.match('([^/]+)$')
@@ -229,20 +244,27 @@ module Sluice
 
               # What are we doing?
               case operation
+              when :download
+                puts "    DOWNLOAD #{from_location.bucket}/#{file.key} +-> #{to_loc_or_dir}/#{file.key}"
               when :move
-                puts "    MOVE #{from_location.bucket}/#{file.key} -> #{to_location.bucket}/#{to_location.dir_as_path}#{filename}"            
+                puts "    MOVE #{from_location.bucket}/#{file.key} -> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
               when :copy
-                puts "    COPY #{from_location.bucket}/#{file.key} +-> #{to_location.bucket}/#{to_location.dir_as_path}#{filename}"  
+                puts "    COPY #{from_location.bucket}/#{file.key} +-> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
               when :delete
                 puts "    DELETE x #{from_location.bucket}/#{file.key}" 
+              end
+
+              # Download is a stand-alone operation vs move/copy/delete
+              if operation == :download
+                puts "Download not supported yet! <<DOING NOTHING>>"
               end
 
               # A move or copy starts with a copy file
               if [:move, :copy].include? operation
                 i = 0
                 begin
-                  file.copy(to_location.bucket, to_location.dir_as_path + filename)
-                  puts "      +-> #{to_location.bucket}/#{to_location.dir_as_path}#{filename}"
+                  file.copy(to_loc_or_dir.bucket, to_loc_or_dir.dir_as_path + filename)
+                  puts "      +-> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
                 rescue
                   raise unless i < RETRIES
                   puts "Problem copying #{file.key}. Retrying.", $!, $@
