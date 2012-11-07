@@ -144,6 +144,23 @@ module Sluice
       end
       module_function :move_files
 
+      # Download a single file to the exact path specified.
+      # Has no intelligence around filenaming.
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +from_file:: A Fog::File to download
+      # +to_file:: A local file path
+      def download_file(s3, from_file, to_file)
+
+        puts "We're going to download a file #{from_file.key}"
+        puts from_file.body
+
+        # TODO: update this with the file download code
+
+      end
+      module_function :download_file
+
       private
 
       # Concurrent file operations between S3 locations. Supports:
@@ -257,7 +274,16 @@ module Sluice
 
               # Download is a stand-alone operation vs move/copy/delete
               if operation == :download
-                puts "Download not supported yet! <<DOING NOTHING>>"
+
+                # TODO: due to nature of S3 & Fog, if there is a sub-path
+                # on the from_location bucket, then that sub-path is
+                # recreated in the to_loc_or_dir local folder. Maybe we
+                # should strip those folders off.
+                to_file = "#{to_loc_or_dir}/#{file.key}"
+
+                download_file(s3, file, to_file)
+
+                puts "      +/> #{to_file}"
               end
 
               # A move or copy starts with a copy file
