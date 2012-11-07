@@ -260,30 +260,34 @@ module Sluice
                 filename = file_match[1]
               end
 
-              # What are we doing?
+              # What are we doing? Let's determine source and target
+              source = "#{from_location.bucket}/#{file.key}"
               case operation
               when :download
-                puts "    DOWNLOAD #{from_location.bucket}/#{file.key} +-> #{to_loc_or_dir}/#{file.key}"
-              when :move
-                puts "    MOVE #{from_location.bucket}/#{file.key} -> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
-              when :copy
-                puts "    COPY #{from_location.bucket}/#{file.key} +-> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
-              when :delete
-                puts "    DELETE x #{from_location.bucket}/#{file.key}" 
-              end
-
-              # Download is a stand-alone operation vs move/copy/delete
-              if operation == :download
 
                 # TODO: due to nature of S3 & Fog, if there is a sub-path
                 # on the from_location bucket, then that sub-path is
                 # recreated in the to_loc_or_dir local folder. Maybe we
                 # should strip those folders off.
-                to_file = "#{to_loc_or_dir}/#{file.key}"
+                target = "#{to_loc_or_dir}/#{file.key}"
+                puts "    DOWNLOAD #{source} +-> #{target}"
+              when :move
+                # TODO: bug where the path on the source file does not make it into the target path
+                target = "#{to_loc_or_dir.dir_as_path}#{filename}"
+                puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
+              when :copy
+                # TODO: bug where the path on the source file does not make it into the target path
+                target = "#{to_loc_or_dir.dir_as_path}#{filename}"
+                puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
+              when :delete
+                # No target
+                puts "    DELETE x #{source}" 
+              end
 
-                download_file(s3, file, to_file)
-
-                puts "      +/> #{to_file}"
+              # Download is a stand-alone operation vs move/copy/delete
+              if operation == :download
+                download_file(s3, file, target)
+                puts "      +/> #{target}"
               end
 
               # A move or copy starts with a copy file
@@ -291,11 +295,11 @@ module Sluice
                 i = 0
                 begin
                   file.copy(to_loc_or_dir.bucket, to_loc_or_dir.dir_as_path + filename)
-                  puts "      +-> #{to_loc_or_dir.bucket}/#{to_loc_or_dir.dir_as_path}#{filename}"
+                  puts "      +-> #{to_loc_or_dir.bucket}/#{target}"
                 rescue
                   raise unless i < RETRIES
                   puts "Problem copying #{file.key}. Retrying.", $!, $@
-                  sleep(RETRY_WAIT)  # give us a bit of time before retrying
+                  sleep(RETRY_WAIT)  # Give us a bit of time before retrying
                   i += 1
                   retry
                 end
@@ -306,7 +310,7 @@ module Sluice
                 i = 0
                 begin
                   file.destroy()
-                  puts "      x #{from_location.bucket}/#{file.key}"
+                  puts "      x #{source}"
                 rescue
                   raise unless i < RETRIES
                   puts "Problem destroying #{file.key}. Retrying.", $!, $@
