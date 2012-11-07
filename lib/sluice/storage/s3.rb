@@ -154,6 +154,9 @@ module Sluice
       # +to_file:: A local file path
       def download_file(s3, from_file, to_file)
 
+        puts "from_file = #{from_file}"
+        puts "to_file = #{to_file}"
+
         FileUtils.mkdir_p(File.dirname(to_file))
         local_file = File.open(to_file, "w")
         local_file.write(from_file.body)
