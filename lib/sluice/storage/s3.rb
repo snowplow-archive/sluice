@@ -270,7 +270,7 @@ module Sluice
                 # on the from_location bucket, then that sub-path is
                 # recreated in the to_loc_or_dir local folder. Maybe we
                 # should strip those folders off.
-                target = "#{to_loc_or_dir}/#{file.key}"
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
                 target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path)
