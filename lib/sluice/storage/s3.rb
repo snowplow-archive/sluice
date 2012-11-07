@@ -146,6 +146,7 @@ module Sluice
 
       # Download a single file to the exact path specified.
       # Has no intelligence around filenaming.
+      # Makes sure to create the path as needed.
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
@@ -153,6 +154,7 @@ module Sluice
       # +to_file:: A local file path
       def download_file(s3, from_file, to_file)
 
+        FileUtils.mkdir_p(File.dirname(to_file))
         local_file = File.open(to_file, "w")
         local_file.write(from_file.body)
         local_file.close
