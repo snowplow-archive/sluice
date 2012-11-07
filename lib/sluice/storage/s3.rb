@@ -97,7 +97,7 @@ module Sluice
       def download_files(s3, from_location, to_directory, match_regex='.+')
 
         puts "  downloading files from #{from_location} to #{to_directory}"
-        process_files(:download, s3, from_location, to_directory, match_regex)
+        process_files(:download, s3, from_location, match_regex, to_directory)
       end
       module_function :download_files    
 
@@ -174,7 +174,7 @@ module Sluice
             raise StorageOperationError "File operation %s does not support the alter_filename_lambda argument" % operation
           end
         else
-          raise StorageOperationError "File operation %s is unsupported. Try :copy, :delete or :move" % operation
+          raise StorageOperationError "File operation %s is unsupported. Try :download, :copy, :delete or :move" % operation
         end
 
         files_to_process = []
@@ -202,8 +202,8 @@ module Sluice
 
                 while !complete && !match do
                   if files_to_process.size == 0
-                    # s3 batches 1000 files per request
-                    # we load up our array with the files to move
+                    # S3 batches 1000 files per request.
+                    # We load up our array with the files to move
                     files_to_process = s3.directories.get(from_location.bucket, :prefix => from_location.dir).files.all(marker_opts)
                     # if we don't have any files after the s3 request, we're complete
                     if files_to_process.size == 0
@@ -219,6 +219,7 @@ module Sluice
                   end
 
                   file = files_to_process.pop
+
                   match = if match_regex.is_a? NegativeRegex
                             !file.key.match(match_regex.regex)
                           else
