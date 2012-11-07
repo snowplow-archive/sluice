@@ -1,0 +1,12 @@
+Version 0.0.3 (2012-11-07)
+--------------------------
+Added parallel file download
+
+Version 0.0.2 (2012-11-06)
+--------------------------
+Added trail_slash	
+Bug fixing in regexify and files_up_to
+
+Version 0.0.1
+-------------
+Initial release of Sluice
