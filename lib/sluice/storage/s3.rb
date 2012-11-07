@@ -260,11 +260,6 @@ module Sluice
                 filename = file_match[1]
               end
 
-              puts "DEBUG"
-              puts "from_location.dir_as_path = #{from_location.dir_as_path}"
-              puts "from_location.dir_as_path = #{from_location.dir_as_path}"
-              puts "file.key = #{file.key}"
-
               # What are we doing? Let's determine source and target
               # Note that target excludes bucket name where relevant
               source = "#{from_location.bucket}/#{file.key}"
@@ -278,12 +273,10 @@ module Sluice
                 target = "#{to_loc_or_dir}/#{file.key}"
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                # TODO: remove sub-path as per comment under :download above
-                target = "#{from_location.dir_as_path}#{to_loc_or_dir.dir_as_path}#{filename}"
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path)
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                # TODO: remove sub-path as per comment under :download above
-                target = "#{from_location.dir_as_path}#{to_loc_or_dir.dir_as_path}#{filename}"
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path)
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
                 # No target
@@ -334,6 +327,46 @@ module Sluice
 
       end
       module_function :process_files
+
+      # A helper function to prepare destination
+      # filenames and paths. This is a bit weird
+      # - it needs to exist because of differences
+      # in the way that Amazon S3, Fog and Unix
+      # treat filepaths versus keys.
+      #
+      # Parameter:
+      # +filepath+:: Path to file (including old filename)
+      # +new_filename+:: Replace the filename in the path with this
+      # +remove_path+:: If this is set, strip this from the front of the path
+      # +add_path+:: If this is set, add this to the front of the path
+      #
+      # TODO: this really needs unit tests
+      def name_file(filepath, new_filename, remove_path=nil, add_path=nil)
+
+        # First, replace the filename in filepath with new one
+        new_filepath = File.dirname(filepath) + '/' + new_filename
+
+        # Nothing more to do
+        return new_filepath if remove_path.nil?
+
+        # If we have a 'remove_path', it must be found at
+        # the start of the path.
+        # If it's not, you're probably using name_file()
+        # wrong.
+        if !filepath.start_with?(remove_path)
+          raise StorageOperationError, "name_file failed. Filepath '#{filepath}' does not start with '#{remove_path}'"
+        end
+
+        # Okay, let's remove the filepath
+        shortened_filepath = new_filepath[remove_path.length()..-1]
+
+        # Nothing more to do
+        return shortened_filepath if add_path.nil?
+
+        # Add the new filepath on to the start and return
+        add_path + shortened_filepath
+      end
+      module_function :name_file
 
     end
   end
