@@ -260,7 +260,13 @@ module Sluice
                 filename = file_match[1]
               end
 
+              puts "DEBUG"
+              puts "from_location.dir_as_path = #{from_location.dir_as_path}"
+              puts "from_location.dir_as_path = #{from_location.dir_as_path}"
+              puts "file.key = #{file.key}"
+
               # What are we doing? Let's determine source and target
+              # Note that target excludes bucket name where relevant
               source = "#{from_location.bucket}/#{file.key}"
               case operation
               when :download
@@ -272,12 +278,12 @@ module Sluice
                 target = "#{to_loc_or_dir}/#{file.key}"
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                # TODO: bug where the path on the source file does not make it into the target path
-                target = "#{to_loc_or_dir.dir_as_path}#{filename}"
+                # TODO: remove sub-path as per comment under :download above
+                target = "#{from_location.dir_as_path}#{to_loc_or_dir.dir_as_path}#{filename}"
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                # TODO: bug where the path on the source file does not make it into the target path
-                target = "#{to_loc_or_dir.dir_as_path}#{filename}"
+                # TODO: remove sub-path as per comment under :download above
+                target = "#{from_location.dir_as_path}#{to_loc_or_dir.dir_as_path}#{filename}"
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
                 # No target
@@ -294,7 +300,7 @@ module Sluice
               if [:move, :copy].include? operation
                 i = 0
                 begin
-                  file.copy(to_loc_or_dir.bucket, to_loc_or_dir.dir_as_path + filename)
+                  file.copy(to_loc_or_dir.bucket, target)
                   puts "      +-> #{to_loc_or_dir.bucket}/#{target}"
                 rescue
                   raise unless i < RETRIES
