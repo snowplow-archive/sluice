@@ -153,11 +153,9 @@ module Sluice
       # +to_file:: A local file path
       def download_file(s3, from_file, to_file)
 
-        puts "We're going to download a file #{from_file.key}"
-        puts from_file.body
-
-        # TODO: update this with the file download code
-
+        local_file = File.open(to_file, "w")
+        local_file.write(from_file.body)
+        local_file.close
       end
       module_function :download_file
 
