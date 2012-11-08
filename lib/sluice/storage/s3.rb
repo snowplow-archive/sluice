@@ -268,11 +268,6 @@ module Sluice
               source = "#{from_location.bucket}/#{file.key}"
               case operation
               when :download
-
-                # TODO: due to nature of S3 & Fog, if there is a sub-path
-                # on the from_location bucket, then that sub-path is
-                # recreated in the to_loc_or_dir local folder. Maybe we
-                # should strip those folders off.
                 target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
