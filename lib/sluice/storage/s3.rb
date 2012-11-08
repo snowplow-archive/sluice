@@ -249,12 +249,13 @@ module Sluice
               end
 
               # If we don't have a match, then we must be complete
-              break unless match # Exit the thread
+              break unless match
+
+              # Ignore any EMR-created _$folder$ entries
+              break if file.key.end_with?('_$folder$')
 
               # Match the filename, ignoring directory
               file_match = file.key.match('([^/]+)$')
-
-              # Silently skip any sub-directories in the list
               break unless file_match
 
               if alter_filename_lambda.class == Proc
