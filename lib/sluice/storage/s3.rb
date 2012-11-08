@@ -342,7 +342,8 @@ module Sluice
       def name_file(filepath, new_filename, remove_path=nil, add_path=nil)
 
         # First, replace the filename in filepath with new one
-        new_filepath = File.dirname(filepath) + '/' + new_filename
+        dirname = File.dirname(filepath)
+        new_filepath = (dirname == '.') ? new_filename : dirname + '/' + new_filename
 
         # Nothing more to do
         return new_filepath if remove_path.nil?
