@@ -1,6 +1,8 @@
 Version 0.0.3 (2012-11-07)
 --------------------------
 Added parallel file download
+Some simplification of existing code
+Fixed a couple of bugs inthe file move code (around S3 file keys versus local filepaths)
 
 Version 0.0.2 (2012-11-06)
 --------------------------
