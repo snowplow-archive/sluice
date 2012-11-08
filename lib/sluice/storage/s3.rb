@@ -154,10 +154,10 @@ module Sluice
       # +to_file:: A local file path
       def download_file(s3, from_file, to_file)
 
-        puts "from_file = #{from_file}"
-        puts "to_file = #{to_file}"
-
         FileUtils.mkdir_p(File.dirname(to_file))
+
+        # TODO: deal with bug where Fog hangs indefinitely if network connection dies during download
+
         local_file = File.open(to_file, "w")
         local_file.write(from_file.body)
         local_file.close
@@ -284,8 +284,10 @@ module Sluice
 
               # Download is a stand-alone operation vs move/copy/delete
               if operation == :download
-                download_file(s3, file, target)
-                puts "      +/> #{target}"
+                retry_x(download_file(s3, file, target),
+                  RETRIES,
+                  "      +/> #{target}",
+                  "Problem downloading #{file.key}. Retrying.")
               end
 
               # A move or copy starts with a copy file
@@ -327,13 +329,36 @@ module Sluice
       end
       module_function :process_files
 
+      # A helper function to attempt to run a
+      # function retries times
+      #
+      # Parameters:
+      # +function+:: Function to run
+      # +retries+:: Number of retries to attempt
+      # +attempt_msg+:: Message to puts on each attempt
+      # +failure_msg+:: Message to puts on each failure
+      def retry_x(function, retries, attempt_msg, failure_msg)
+        i = 0
+        begin
+          function
+          puts attempt_msg
+        rescue
+          raise unless i < retries
+          puts failure_msg
+          sleep(RETRY_WAIT)  # Give us a bit of time before retrying
+          i += 1
+          retry
+        end        
+      end
+      module_function :retry_x
+
       # A helper function to prepare destination
       # filenames and paths. This is a bit weird
       # - it needs to exist because of differences
       # in the way that Amazon S3, Fog and Unix
       # treat filepaths versus keys.
       #
-      # Parameter:
+      # Parameters:
       # +filepath+:: Path to file (including old filename)
       # +new_filename+:: Replace the filename in the path with this
       # +remove_path+:: If this is set, strip this from the front of the path
