@@ -206,7 +206,7 @@ module Sluice
         # If an exception is thrown in a thread that isn't handled, die quickly
         Thread.abort_on_exception = true
 
-        # Create ruby threads to concurrently execute s3 operations
+        # Create Ruby threads to concurrently execute s3 operations
         for i in (0...CONCURRENCY)
 
           # Each thread pops a file off the files_to_process array, and moves it.
@@ -225,7 +225,7 @@ module Sluice
                     # S3 batches 1000 files per request.
                     # We load up our array with the files to move
                     files_to_process = s3.directories.get(from_location.bucket, :prefix => from_location.dir).files.all(marker_opts)
-                    # if we don't have any files after the s3 request, we're complete
+                    # If we don't have any files after the s3 request, we're complete
                     if files_to_process.size == 0
                       complete = true
                       next
