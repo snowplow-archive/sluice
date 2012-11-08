@@ -284,40 +284,26 @@ module Sluice
 
               # Download is a stand-alone operation vs move/copy/delete
               if operation == :download
-                retry_x(download_file(s3, file, target),
-                  RETRIES,
+                retry_x(
+                  download_file(s3, file, target), RETRIES,
                   "      +/> #{target}",
                   "Problem downloading #{file.key}. Retrying.")
               end
 
               # A move or copy starts with a copy file
               if [:move, :copy].include? operation
-                i = 0
-                begin
-                  file.copy(to_loc_or_dir.bucket, target)
-                  puts "      +-> #{to_loc_or_dir.bucket}/#{target}"
-                rescue
-                  raise unless i < RETRIES
-                  puts "Problem copying #{file.key}. Retrying.", $!, $@
-                  sleep(RETRY_WAIT)  # Give us a bit of time before retrying
-                  i += 1
-                  retry
-                end
+                retry_x(
+                  file.copy(to_loc_or_dir.bucket, target), RETRIES,
+                  "      +-> #{to_loc_or_dir.bucket}/#{target}",
+                  "Problem copying #{file.key}. Retrying.")
               end
 
               # A move or delete ends with a delete
               if [:move, :delete].include? operation
-                i = 0
-                begin
-                  file.destroy()
-                  puts "      x #{source}"
-                rescue
-                  raise unless i < RETRIES
-                  puts "Problem destroying #{file.key}. Retrying.", $!, $@
-                  sleep(RETRY_WAIT) # Give us a bit of time before retrying
-                  i += 1
-                  retry
-                end
+                retry_x(
+                  file.destroy(), RETRIES,
+                  "      x #{source}",
+                  "Problem destroying #{file.key}. Retrying.")
               end
             end
           end
