@@ -305,7 +305,7 @@ module Sluice
               # A move or delete ends with a delete
               if [:move, :delete].include? operation
                 retry_x(
-                  file
+                  file,
                   [:destroy],
                   RETRIES,
                   "      x #{source}",
