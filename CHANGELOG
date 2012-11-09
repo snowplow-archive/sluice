@@ -1,3 +1,7 @@
+Version 0.0.4 (2012-11-09)
+--------------------------
+Fixed nasty bug where the retry code wasn't working
+
 Version 0.0.3 (2012-11-07)
 --------------------------
 Added parallel file download
