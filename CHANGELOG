@@ -2,11 +2,11 @@ Version 0.0.3 (2012-11-07)
 --------------------------
 Added parallel file download
 Some simplification of existing code
-Fixed a couple of bugs inthe file move code (around S3 file keys versus local filepaths)
+Fixed a couple of bugs in the file move code (around S3 file keys versus local filepaths)
 
 Version 0.0.2 (2012-11-06)
 --------------------------
-Added trail_slash	
+Added trail_slash
 Bug fixing in regexify and files_up_to
 
 Version 0.0.1
