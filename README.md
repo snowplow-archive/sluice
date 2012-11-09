@@ -13,7 +13,7 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.0.1'
+    gem 'sluice', '~> 0.0.3'
 
 ## Usage
 
