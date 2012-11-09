@@ -285,7 +285,9 @@ module Sluice
               # Download is a stand-alone operation vs move/copy/delete
               if operation == :download
                 retry_x(
-                  download_file(s3, file, target), RETRIES,
+                  Sluice::Storage::S3,
+                  [:download_file, s3, file, target],
+                  RETRIES,
                   "      +/> #{target}",
                   "Problem downloading #{file.key}. Retrying.")
               end
@@ -293,7 +295,9 @@ module Sluice
               # A move or copy starts with a copy file
               if [:move, :copy].include? operation
                 retry_x(
-                  file.copy(to_loc_or_dir.bucket, target), RETRIES,
+                  file,
+                  [:copy, to_loc_or_dir.bucket, target],
+                  RETRIES,
                   "      +-> #{to_loc_or_dir.bucket}/#{target}",
                   "Problem copying #{file.key}. Retrying.")
               end
@@ -301,7 +305,9 @@ module Sluice
               # A move or delete ends with a delete
               if [:move, :delete].include? operation
                 retry_x(
-                  file.destroy(), RETRIES,
+                  file
+                  [:destroy],
+                  RETRIES,
                   "      x #{source}",
                   "Problem destroying #{file.key}. Retrying.")
               end
@@ -323,10 +329,10 @@ module Sluice
       # +retries+:: Number of retries to attempt
       # +attempt_msg+:: Message to puts on each attempt
       # +failure_msg+:: Message to puts on each failure
-      def retry_x(function, retries, attempt_msg, failure_msg)
+      def retry_x(object, send_args, retries, attempt_msg, failure_msg)
         i = 0
         begin
-          function
+          object.send(*send_args)
           puts attempt_msg
         rescue
           raise unless i < retries
