@@ -1,3 +1,7 @@
+Version 0.0.5 (2012-12-30)
+--------------------------
+Added option to flatten recursive paths
+
 Version 0.0.4 (2012-11-09)
 --------------------------
 Fixed nasty bug where the retry code wasn't working

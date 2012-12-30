@@ -122,10 +122,11 @@ module Sluice
       # +to_location+:: S3Location to copy files to
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
-      def copy_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false)
+      # +flatten+:: strips off any sub-folders below the from_location
+      def copy_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying files from #{from_location} to #{to_location}"
-        process_files(:copy, s3, from_location, match_regex, to_location, alter_filename_lambda)
+        process_files(:copy, s3, from_location, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :copy_files
 
@@ -137,10 +138,11 @@ module Sluice
       # +to+:: S3Location to move files to
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
-      def move_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false)
+      # +flatten+:: strips off any sub-folders below the from_location
+      def move_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving files from #{from_location} to #{to_location}"
-        process_files(:move, s3, from_location, match_regex, to_location, alter_filename_lambda)
+        process_files(:move, s3, from_location, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :move_files
 
@@ -178,7 +180,8 @@ module Sluice
       # +match_regex+:: a regex string to match the files to process
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
-      def process_files(operation, s3, from_location, match_regex='.+', to_loc_or_dir=nil, alter_filename_lambda=false)
+      # +flatten+:: strips off any sub-folders below the from_location
+      def process_files(operation, s3, from_location, match_regex='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
@@ -269,13 +272,13 @@ module Sluice
               source = "#{from_location.bucket}/#{file.key}"
               case operation
               when :download
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir)
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir, flatten)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path)
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path)
+                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
                 # No target
@@ -355,27 +358,33 @@ module Sluice
       # +new_filename+:: Replace the filename in the path with this
       # +remove_path+:: If this is set, strip this from the front of the path
       # +add_path+:: If this is set, add this to the front of the path
+      # +flatten+:: strips off any sub-folders below the from_location
       #
       # TODO: this really needs unit tests
-      def name_file(filepath, new_filename, remove_path=nil, add_path=nil)
+      def name_file(filepath, new_filename, remove_path=nil, add_path=nil, flatten=false)
 
         # First, replace the filename in filepath with new one
         dirname = File.dirname(filepath)
         new_filepath = (dirname == '.') ? new_filename : dirname + '/' + new_filename
 
         # Nothing more to do
-        return new_filepath if remove_path.nil?
+        return new_filepath if remove_path.nil? and add_path.nil? and not flatten
 
-        # If we have a 'remove_path', it must be found at
-        # the start of the path.
-        # If it's not, you're probably using name_file()
-        # wrong.
-        if !filepath.start_with?(remove_path)
-          raise StorageOperationError, "name_file failed. Filepath '#{filepath}' does not start with '#{remove_path}'"
-        end
+        shortened_filepath =  if flatten
+                                # Let's revert to just the filename
+                                new_filename
+                              else
+                                # If we have a 'remove_path', it must be found at
+                                # the start of the path.
+                                # If it's not, you're probably using name_file()
+                                # wrong.
+                                if !filepath.start_with?(remove_path)
+                                  raise StorageOperationError, "name_file failed. Filepath '#{filepath}' does not start with '#{remove_path}'"
+                                end
 
-        # Okay, let's remove the filepath
-        shortened_filepath = new_filepath[remove_path.length()..-1]
+                                # Okay, let's remove the filepath
+                                new_filepath[remove_path.length()..-1]
+                              end
 
         # Nothing more to do
         return shortened_filepath if add_path.nil?
