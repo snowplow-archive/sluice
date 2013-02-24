@@ -2,6 +2,8 @@
 
 Sluice is a Ruby gem (built with [Bundler] [bundler]) to help you build cloud-friendly ETL (extract, transform, load) processes.
 
+**Currently it does one thing: supports very robust, very parallel copy of S3 files from one bucket to another.**
+
 Sluice has been extracted from a pair of Ruby ETL applications built by the [SnowPlow Analytics] [snowplow-analytics] team, specifically:
 
 1. [EmrEtlRunner] [emr-etl-runner], a Ruby application to run the SnowPlow ETL process on Elastic MapReduce
