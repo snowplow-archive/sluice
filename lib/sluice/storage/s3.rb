@@ -135,7 +135,7 @@ module Sluice
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +from_location+:: S3Location to move files from
-      # +to+:: S3Location to move files to
+      # +to_location+:: S3Location to move files to
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
@@ -146,7 +146,36 @@ module Sluice
       end
       module_function :move_files
 
-      # Download a single file to the exact path specified.
+      # Uploads files to S3 locations concurrently
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +from_directory+:: Local directory to upload files from
+      # +to_location+:: S3Location to upload files to
+      # +match_glob+:: a filesystem glob to match the files to upload
+      def upload_files(s3, from_directory, to_location, match_glob='*')
+
+        puts "  uploading files from #{from_directory} to #{to_location}"
+        process_files(:upload, s3, from_directory, match_glob, to_location)
+      end
+      module_function :upload_files
+
+      # Upload a single file to the exact location specified
+      # Has no intelligence around filenaming.
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +from_file:: A local file path
+      # +to_file:: A Fog::File to upload to
+      def upload_file(s3, from_file, to_file)
+
+        local_file = File.open(from_file)
+        to_file.body = local_file
+        to_file.save
+        local_file.close
+      module_function :upload_file
+
+      # Download a single file to the exact path specified
       # Has no intelligence around filenaming.
       # Makes sure to create the path as needed.
       #
@@ -169,23 +198,25 @@ module Sluice
       private
 
       # Concurrent file operations between S3 locations. Supports:
+      # - Download
+      # - Upload
       # - Copy
       # - Delete
       # - Move (= Copy + Delete)
       #
       # Parameters:
-      # +operation+:: Operation to perform. :copy, :delete, :move supported
+      # +operation+:: Operation to perform. :download, :upload, :copy, :delete, :move supported
       # +s3+:: A Fog::Storage s3 connection
-      # +from_location+:: S3Location to process files from
-      # +match_regex+:: a regex string to match the files to process
+      # +from_loc_or_dir+:: S3Location to process files from
+      # +match_regex_or_glob+:: a regex or glob string to match the files to process
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
-      # +flatten+:: strips off any sub-folders below the from_location
-      def process_files(operation, s3, from_location, match_regex='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
+      # +flatten+:: strips off any sub-folders below the from_loc_or_dir
+      def process_files(operation, s3, from_loc_or_dir, match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
-        when :copy, :move, :download
+        when :copy, :move, :download, :upload
           if to_loc_or_dir.nil?
             raise StorageOperationError "File operation %s requires the to_loc_or_dir to be set" % operation
           end
@@ -197,10 +228,15 @@ module Sluice
             raise StorageOperationError "File operation %s does not support the alter_filename_lambda argument" % operation
           end
         else
-          raise StorageOperationError "File operation %s is unsupported. Try :download, :copy, :delete or :move" % operation
+          raise StorageOperationError "File operation %s is unsupported. Try :download, :upload, :copy, :delete or :move" % operation
         end
 
-        files_to_process = []
+        # If we are uploading, then we can glob the files before we thread
+        if operation == :upload
+          files_to_process = Dir.glob(File.join(from_loc_or_dir, match_regex_or_glob))
+        else
+          files_to_process = []
+        end
         threads = []
         mutex = Mutex.new
         complete = false
@@ -223,31 +259,38 @@ module Sluice
               # only allow one thread to modify the array at any time
               mutex.synchronize do
 
-                while !complete && !match do
-                  if files_to_process.size == 0
-                    # S3 batches 1000 files per request.
-                    # We load up our array with the files to move
-                    files_to_process = s3.directories.get(from_location.bucket, :prefix => from_location.dir).files.all(marker_opts)
-                    # If we don't have any files after the s3 request, we're complete
+                if operation == :upload
+                  filepath = files_to_process.pop
+                  match = true # Match is implicit in the glob
+                else
+
+                  while !complete && !match do
                     if files_to_process.size == 0
-                      complete = true
-                      next
-                    else
-                      marker_opts['marker'] = files_to_process.last.key
+                      # S3 batches 1000 files per request.
+                      # We load up our array with the files to move
+                      files_to_process = s3.directories.get(from_loc_or_dir.bucket, :prefix => from_loc_or_dir.dir).files.all(marker_opts)
+                      # If we don't have any files after the s3 request, we're complete
+                      if files_to_process.size == 0
+                        complete = true
+                        next
+                      else
+                        marker_opts['marker'] = files_to_process.last.key
 
-                      # By reversing the array we can use pop and get FIFO behaviour
-                      # instead of the performance penalty incurred by unshift
-                      files_to_process = files_to_process.reverse
+                        # By reversing the array we can use pop and get FIFO behaviour
+                        # instead of the performance penalty incurred by unshift
+                        files_to_process = files_to_process.reverse
+                      end
                     end
+
+                    file = files_to_process.pop
+                    filepath = file.key
+
+                    match = if match_regex_or_glob.is_a? NegativeRegex
+                              !filepath.match(match_regex_or_glob.regex)
+                            else
+                              filepath.match(match_regex_or_glob)
+                            end
                   end
-
-                  file = files_to_process.pop
-
-                  match = if match_regex.is_a? NegativeRegex
-                            !file.key.match(match_regex.regex)
-                          else
-                            file.key.match(match_regex)
-                          end
                 end
               end
 
@@ -255,12 +298,13 @@ module Sluice
               break unless match
 
               # Ignore any EMR-created _$folder$ entries
-              break if file.key.end_with?('_$folder$')
+              break if filepath.end_with?('_$folder$')
 
-              # Match the filename, ignoring directory
-              file_match = file.key.match('([^/]+)$')
+              # Match the filename, ignoring directories
+              file_match = filepath.match('([^/]+)$')
               break unless file_match
 
+              # Rename
               if alter_filename_lambda.class == Proc
                 filename = alter_filename_lambda.call(file_match[1])
               else
@@ -269,30 +313,47 @@ module Sluice
 
               # What are we doing? Let's determine source and target
               # Note that target excludes bucket name where relevant
-              source = "#{from_location.bucket}/#{file.key}"
               case operation
+              when :upload
+                source = "#{from_loc_or_dir.bucket}/#{file}"
+                target = name_file(filepath, filename, from_loc_or_dir, to_loc_or_dir, flatten)
+                puts "    UPLOAD #{source} +-> #{target}"                
               when :download
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir, flatten)
+                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir, flatten)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
+                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                target = name_file(file.key, filename, from_location.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
+                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
+                source = "#{from_loc_or_dir.bucket}/#{file.key}"
                 # No target
                 puts "    DELETE x #{source}" 
               end
 
-              # Download is a stand-alone operation vs move/copy/delete
+              # Upload is a standalone operation vs move/copy/delete
+              if operation == :upload
+                retry_x(
+                  Sluice::Storage::S3,
+                  [:upload_file, s3, filepath, target],
+                  RETRIES,
+                  "      +/> #{target}",
+                  "Problem uploading #{filepath}. Retrying.")
+              end                
+
+              # Download is a standalone operation vs move/copy/delete
               if operation == :download
                 retry_x(
                   Sluice::Storage::S3,
                   [:download_file, s3, file, target],
                   RETRIES,
                   "      +/> #{target}",
-                  "Problem downloading #{file.key}. Retrying.")
+                  "Problem downloading #{filepath}. Retrying.")
               end
 
               # A move or copy starts with a copy file
@@ -302,7 +363,7 @@ module Sluice
                   [:copy, to_loc_or_dir.bucket, target],
                   RETRIES,
                   "      +-> #{to_loc_or_dir.bucket}/#{target}",
-                  "Problem copying #{file.key}. Retrying.")
+                  "Problem copying #{filepath}. Retrying.")
               end
 
               # A move or delete ends with a delete
@@ -312,7 +373,7 @@ module Sluice
                   [:destroy],
                   RETRIES,
                   "      x #{source}",
-                  "Problem destroying #{file.key}. Retrying.")
+                  "Problem destroying #{filepath}. Retrying.")
               end
             end
           end
