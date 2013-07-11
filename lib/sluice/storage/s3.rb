@@ -241,7 +241,6 @@ module Sluice
         # If we are uploading, then we can glob the files before we thread
         if operation == :upload
           files_to_process = Dir.glob(File.join(from_loc_or_dir, match_regex_or_glob))
-          # puts files_to_process
         else
           files_to_process = []
         end
