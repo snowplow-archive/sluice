@@ -166,13 +166,20 @@ module Sluice
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +from_file:: A local file path
-      # +to_file:: A Fog::File to upload to
-      def upload_file(s3, from_file, to_file)
+      # +to_bucket:: The Fog::Directory to upload to
+      # +to_file:: The file path to upload to
+      def upload_file(s3, from_file, to_bucket, to_file)
 
         local_file = File.open(from_file)
-        to_file.body = local_file
-        to_file.save
+
+        dir = s3.directories.new(:key => to_bucket) # No request made
+        file = dir.files.create(
+          :key    => to_file,
+          :body   => local_file
+        )
+
         local_file.close
+      end
       module_function :upload_file
 
       # Download a single file to the exact path specified
@@ -234,6 +241,7 @@ module Sluice
         # If we are uploading, then we can glob the files before we thread
         if operation == :upload
           files_to_process = Dir.glob(File.join(from_loc_or_dir, match_regex_or_glob))
+          # puts files_to_process
         else
           files_to_process = []
         end
@@ -261,6 +269,12 @@ module Sluice
               mutex.synchronize do
 
                 if operation == :upload
+
+                  if files_to_process.size == 0
+                    complete = true
+                    next
+                  end
+
                   filepath = files_to_process.pop
                   match = true # Match is implicit in the glob
                 else
@@ -316,23 +330,23 @@ module Sluice
               # Note that target excludes bucket name where relevant
               case operation
               when :upload
-                source = "#{from_loc_or_dir.bucket}/#{file}"
-                target = name_file(filepath, filename, from_loc_or_dir, to_loc_or_dir, flatten)
-                puts "    UPLOAD #{source} +-> #{target}"                
+                source = "#{filepath}"
+                target = name_file(filepath, filename, from_loc_or_dir, to_loc_or_dir.dir_as_path, flatten)
+                puts "    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
               when :download
-                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                source = "#{from_loc_or_dir.bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir, flatten)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                source = "#{from_loc_or_dir.bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                source = "#{from_loc_or_dir.bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
-                source = "#{from_loc_or_dir.bucket}/#{file.key}"
+                source = "#{from_loc_or_dir.bucket}/#{filepath}"
                 # No target
                 puts "    DELETE x #{source}" 
               end
@@ -341,7 +355,7 @@ module Sluice
               if operation == :upload
                 retry_x(
                   Sluice::Storage::S3,
-                  [:upload_file, s3, filepath, target],
+                  [:upload_file, s3, filepath, to_loc_or_dir.bucket, target],
                   RETRIES,
                   "      +/> #{target}",
                   "Problem uploading #{filepath}. Retrying.")
@@ -452,7 +466,7 @@ module Sluice
         return shortened_filepath if add_path.nil?
 
         # Add the new filepath on to the start and return
-        add_path + shortened_filepath
+        return add_path + shortened_filepath
       end
       module_function :name_file
 
