@@ -253,6 +253,7 @@ module Sluice
           threads << Thread.new do
             loop do
               file = false
+              filepath = false
               match = false
 
               # Critical section:
