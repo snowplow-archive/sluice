@@ -91,13 +91,13 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_location+:: S3Location to delete files from      
+      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to download files from      
       # +to_directory+:: Local directory to copy files to
       # +match_regex+:: a regex string to match the files to delete
-      def download_files(s3, from_location, to_directory, match_regex='.+')
+      def download_files(s3, from_files_or_loc, to_directory, match_regex='.+')
 
-        puts "  downloading files from #{from_location} to #{to_directory}"
-        process_files(:download, s3, from_location, match_regex, to_directory)
+        puts "  downloading #{describe_from(from_files_or_loc)} to #{to_directory}"
+        process_files(:download, s3, from_files_or_loc, match_regex, to_directory)
       end
       module_function :download_files    
 
@@ -105,12 +105,12 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_location+:: S3Location to delete files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to delete files from
       # +match_regex+:: a regex string to match the files to delete
-      def delete_files(s3, from_location, match_regex='.+')
+      def delete_files(s3, from_files_or_loc, match_regex='.+')
 
-        puts "  deleting files from #{from_location}"
-        process_files(:delete, s3, from_location, match_regex)
+        puts "  deleting #{describe_from(from_files_or_loc)}"
+        process_files(:delete, s3, from_files_or_loc, match_regex)
       end
       module_function :delete_files
 
@@ -118,15 +118,15 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_location+:: S3Location to copy files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to copy files from
       # +to_location+:: S3Location to copy files to
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def copy_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
-        puts "  copying files from #{from_location} to #{to_location}"
-        process_files(:copy, s3, from_location, match_regex, to_location, alter_filename_lambda, flatten)
+        puts "  copying files from #{describe_from(from_files_or_loc)} to #{to_location}"
+        process_files(:copy, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :copy_files
 
@@ -134,15 +134,15 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_location+:: S3Location to move files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to move files from
       # +to_location+:: S3Location to move files to
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def move_files(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
-        puts "  moving files from #{from_location} to #{to_location}"
-        process_files(:move, s3, from_location, match_regex, to_location, alter_filename_lambda, flatten)
+        puts "  moving files from #{describe_from(from_files_or_loc)} to #{to_location}"
+        process_files(:move, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :move_files
 
@@ -150,13 +150,13 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_directory+:: Local directory to upload files from
+      # +from_files_or_dir+:: Local array of files or local directory to upload files from
       # +to_location+:: S3Location to upload files to
       # +match_glob+:: a filesystem glob to match the files to upload
-      def upload_files(s3, from_directory, to_location, match_glob='*')
+      def upload_files(s3, from_files_or_dir, to_location, match_glob='*')
 
-        puts "  uploading files from #{from_directory} to #{to_location}"
-        process_files(:upload, s3, from_directory, match_glob, to_location)
+        puts "  uploading files from #{describe_from(from_files_or_dir)} to #{to_location}"
+        process_files(:upload, s3, from_files_or_dir, match_glob, to_location)
       end
       module_function :upload_files
 
@@ -204,6 +204,22 @@ module Sluice
 
       private
 
+      # Provides string describing from_files_or_dir_or_loc
+      # for logging purposes.
+      #
+      # Parameters:
+      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::File objects, local directory or S3Location to process files from
+      #
+      # Returns a log-friendly string
+      def describe_from(from_files_or_dir_or_loc)
+        if from_files_or_dir_or_loc.is_a?(Array)
+          "#{from_files_or_dir_or_loc.length} files"
+        else
+          "files from #{from_files_or_dir_or_loc}"
+        end
+      end
+      module_function :describe_from
+
       # Concurrent file operations between S3 locations. Supports:
       # - Download
       # - Upload
@@ -214,12 +230,12 @@ module Sluice
       # Parameters:
       # +operation+:: Operation to perform. :download, :upload, :copy, :delete, :move supported
       # +s3+:: A Fog::Storage s3 connection
-      # +from_loc_or_dir+:: S3Location to process files from
+      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::File objects, local directory or S3Location to process files from
       # +match_regex_or_glob+:: a regex or glob string to match the files to process
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_loc_or_dir
-      def process_files(operation, s3, from_loc_or_dir, match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
+      def process_files(operation, s3, from_files_or_dir_or_loc, match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
@@ -238,12 +254,21 @@ module Sluice
           raise StorageOperationError "File operation %s is unsupported. Try :download, :upload, :copy, :delete or :move" % operation
         end
 
-        # If we are uploading, then we can glob the files before we thread
-        if operation == :upload
-          files_to_process = Dir.glob(File.join(from_loc_or_dir, match_regex_or_glob))
+        # If we have an array of files, no additional globbing required
+        if from_files_or_dir_or_loc.is_a?(Array)
+          files_to_process = from_files_or_dir_or_loc # Could be filepaths or Fog::File's
+          globbed = true
+        # Otherwise if it's an upload, we can glob now
+        elsif operation == :upload
+          files_to_process = Dir.glob(File.join(from_files_or_dir_or_loc, match_regex_or_glob))
+          globbed = true
+        # Otherwise we'll do threaded globbing later...
         else
           files_to_process = []
+          from_loc = from_files_or_dir_or_loc # Alias
+          globbed = false
         end
+
         threads = []
         mutex = Mutex.new
         complete = false
@@ -267,14 +292,29 @@ module Sluice
               # only allow one thread to modify the array at any time
               mutex.synchronize do
 
-                if operation == :upload
-
+                # No need to do further globbing 
+                if globbed
                   if files_to_process.size == 0
                     complete = true
                     next
                   end
 
-                  filepath = files_to_process.pop
+                  file = files_to_process.pop
+                  # Support raw filenames and also Fog::File's
+                  if (file.is_a?(Fog::File))
+                    from_bucket = file.directory.key # Bucket
+                    from_path = file.key
+                    filepath = file.key
+                  else
+                    from_bucket = nil # Not used
+                    if from_files_or_dir_or_loc.is_a?(Array)
+                      from_path = File.dirname(file) # The whole dir
+                    else
+                      from_path = from_files_or_dir_or_loc # The root dir
+                    end
+                    filepath = file
+                  end
+
                   match = true # Match is implicit in the glob
                 else
 
@@ -282,8 +322,8 @@ module Sluice
                     if files_to_process.size == 0
                       # S3 batches 1000 files per request.
                       # We load up our array with the files to move
-                      files_to_process = s3.directories.get(from_loc_or_dir.bucket, :prefix => from_loc_or_dir.dir).files.all(marker_opts)
-                      # If we don't have any files after the s3 request, we're complete
+                      files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts)
+                      # If we don't have any files after the S3 request, we're complete
                       if files_to_process.size == 0
                         complete = true
                         next
@@ -297,6 +337,8 @@ module Sluice
                     end
 
                     file = files_to_process.pop
+                    from_bucket = from_loc.bucket
+                    from_path = from_loc.dir_as_path
                     filepath = file.key
 
                     match = if match_regex_or_glob.is_a? NegativeRegex
@@ -330,22 +372,22 @@ module Sluice
               case operation
               when :upload
                 source = "#{filepath}"
-                target = name_file(filepath, filename, from_loc_or_dir, to_loc_or_dir.dir_as_path, flatten)
+                target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
               when :download
-                source = "#{from_loc_or_dir.bucket}/#{filepath}"
-                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir, flatten)
+                source = "#{from_bucket}/#{filepath}"
+                target = name_file(filepath, filename, from_path, to_loc_or_dir, flatten)
                 puts "    DOWNLOAD #{source} +-> #{target}"
               when :move
-                source = "#{from_loc_or_dir.bucket}/#{filepath}"
-                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
+                source = "#{from_bucket}/#{filepath}"
+                target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
-                source = "#{from_loc_or_dir.bucket}/#{filepath}"
-                target = name_file(filepath, filename, from_loc_or_dir.dir_as_path, to_loc_or_dir.dir_as_path, flatten)
+                source = "#{from_bucket}/#{filepath}"
+                target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
                 puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
-                source = "#{from_loc_or_dir.bucket}/#{filepath}"
+                source = "#{from_bucket}/#{filepath}"
                 # No target
                 puts "    DELETE x #{source}" 
               end
