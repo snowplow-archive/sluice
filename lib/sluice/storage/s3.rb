@@ -14,6 +14,7 @@
 # License::   Apache License Version 2.0
 
 require 'fog'
+# require 'fog/aws'
 require 'thread'
 
 module Sluice
@@ -76,13 +77,13 @@ module Sluice
       end
       module_function :new_fog_s3_from
 
-      # Return an array of all Fog::File's
+      # Return an array of all Fog::Storage::AWS::File's
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to return files from
       #
-      # Returns array of Fog::File's
+      # Returns array of Fog::Storage::AWS::File's
       def list_files(s3, location)
         s3.directories.get(location.bucket, prefix: location.dir).files
       end
@@ -103,7 +104,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to download files from      
+      # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to download files from      
       # +to_directory+:: Local directory to copy files to
       # +match_regex+:: a regex string to match the files to delete
       def download_files(s3, from_files_or_loc, to_directory, match_regex='.+')
@@ -117,7 +118,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to delete files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to delete files from
       # +match_regex+:: a regex string to match the files to delete
       def delete_files(s3, from_files_or_loc, match_regex='.+')
 
@@ -130,7 +131,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to copy files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to copy files from
       # +to_location+:: S3Location to copy files to
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
@@ -146,7 +147,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_files_or_loc+:: Array of filepaths or Fog::File objects, or S3Location to move files from
+      # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to move files from
       # +to_location+:: S3Location to move files to
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
@@ -200,7 +201,7 @@ module Sluice
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
-      # +from_file:: A Fog::File to download
+      # +from_file:: A Fog::Storage::AWS::File to download
       # +to_file:: A local file path
       def download_file(s3, from_file, to_file)
 
@@ -220,7 +221,7 @@ module Sluice
       # for logging purposes.
       #
       # Parameters:
-      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::File objects, local directory or S3Location to process files from
+      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, local directory or S3Location to process files from
       #
       # Returns a log-friendly string
       def describe_from(from_files_or_dir_or_loc)
@@ -242,7 +243,7 @@ module Sluice
       # Parameters:
       # +operation+:: Operation to perform. :download, :upload, :copy, :delete, :move supported
       # +s3+:: A Fog::Storage s3 connection
-      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::File objects, local directory or S3Location to process files from
+      # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, local directory or S3Location to process files from
       # +match_regex_or_glob+:: a regex or glob string to match the files to process
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
@@ -268,7 +269,7 @@ module Sluice
 
         # If we have an array of files, no additional globbing required
         if from_files_or_dir_or_loc.is_a?(Array)
-          files_to_process = from_files_or_dir_or_loc # Could be filepaths or Fog::File's
+          files_to_process = from_files_or_dir_or_loc # Could be filepaths or Fog::Storage::AWS::File's
           globbed = true
         # Otherwise if it's an upload, we can glob now
         elsif operation == :upload
@@ -298,6 +299,8 @@ module Sluice
             loop do
               file = false
               filepath = false
+              from_bucket = false
+              from_path = false
               match = false
 
               # Critical section:
@@ -312,8 +315,8 @@ module Sluice
                   end
 
                   file = files_to_process.pop
-                  # Support raw filenames and also Fog::File's
-                  if (file.is_a?(Fog::File))
+                  # Support raw filenames and also Fog::Storage::AWS::File's
+                  if (file.is_a?(Fog::Storage::AWS::File))
                     from_bucket = file.directory.key # Bucket
                     from_path = file.key
                     filepath = file.key
