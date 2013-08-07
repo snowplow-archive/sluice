@@ -84,7 +84,7 @@ module Sluice
       #
       # Returns array of Fog::File's
       def list_files(s3, location)
-        fog.directories.get(location.bucket, prefix: location.dir).files
+        s3.directories.get(location.bucket, prefix: location.dir).files
       end
       module_function :list_files
 
