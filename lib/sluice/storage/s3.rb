@@ -76,13 +76,25 @@ module Sluice
       end
       module_function :new_fog_s3_from
 
+      # Return an array of all Fog::File's
+      #
+      # Parameters:
+      # +s3+:: A Fog::Storage s3 connection
+      # +location+:: The location to return files from
+      #
+      # Returns array of Fog::File's
+      def list_files(s3, location)
+        fog.directories.get(location.bucket, prefix: location.dir).files
+      end
+      module_function :list_files
+
       # Determine if a bucket is empty
       #
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to check
       def is_empty?(s3, location)
-        s3.directories.get(location.bucket, :prefix => location.dir).files().length <= 1
+        list_files(s3, location).length <= 1
       end
       module_function :is_empty?
 
