@@ -85,9 +85,61 @@ module Sluice
       #
       # Returns array of Fog::Storage::AWS::File's
       def list_files(s3, location)
-        s3.directories.get(location.bucket, prefix: location.dir).files
+        files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir).files
+
+        files = [] # Can't use a .select because of Ruby deep copy issues (array of non-POROs)
+        files_and_dirs.each { |f|
+          if is_file?(f.key)
+            files << f.dup
+          end
+        }
+        files
       end
       module_function :list_files
+
+      # Whether the given path is a directory or not
+      #
+      # Parameters:
+      # +path+:: S3 path in String form
+      #
+      # Returns boolean
+      def is_folder?(path)
+        (path.end_with?('_$folder$') || # EMR-created
+          path.end_with?('/'))
+      end
+      module_function :is_folder?
+
+      # Whether the given path is a file or not
+      #
+      # Parameters:
+      # +path+:: S3 path in String form
+      #
+      # Returns boolean
+      def is_file?(path)
+        !is_folder?(path)
+      end
+      module_function :is_file?
+
+      # Returns the basename for the given path
+      #
+      # Parameters:
+      # +path+:: S3 path in String form
+      #
+      # Returns the basename, or nil if the
+      # path is to a folder
+      def get_basename(path)
+        if is_folder?(path)
+          nil
+        else
+          match = path.match('([^/]+)$')
+          if match
+            match[1]
+          else
+            nil
+          end
+        end
+      end
+      module_function :get_basename
 
       # Determine if a bucket is empty
       #
@@ -365,21 +417,15 @@ module Sluice
                 end
               end
 
-              # If we don't have a match, then we must be complete
               break unless match
+              break if is_folder?(filepath)
 
-              # Ignore any EMR-created _$folder$ entries
-              break if filepath.end_with?('_$folder$')
-
-              # Match the filename, ignoring directories
-              file_match = filepath.match('([^/]+)$')
-              break unless file_match
-
-              # Rename
+              # Name file
+              basename = get_basename(filepath)
               if alter_filename_lambda.class == Proc
-                filename = alter_filename_lambda.call(file_match[1])
+                filename = alter_filename_lambda.call(basename)
               else
-                filename = file_match[1]
+                filename = basename
               end
 
               # What are we doing? Let's determine source and target
