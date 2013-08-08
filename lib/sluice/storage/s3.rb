@@ -14,7 +14,6 @@
 # License::   Apache License Version 2.0
 
 require 'fog'
-# require 'fog/aws'
 require 'thread'
 
 module Sluice
