@@ -191,7 +191,7 @@ module Sluice
       # +flatten+:: strips off any sub-folders below the from_location
       def copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
-        puts "  copying files from #{describe_from(from_files_or_loc)} to #{to_location}"
+        puts "  copying #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:copy, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :copy_files
@@ -207,7 +207,7 @@ module Sluice
       # +flatten+:: strips off any sub-folders below the from_location
       def move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
-        puts "  moving files from #{describe_from(from_files_or_loc)} to #{to_location}"
+        puts "  moving #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:move, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :move_files
@@ -221,7 +221,7 @@ module Sluice
       # +match_glob+:: a filesystem glob to match the files to upload
       def upload_files(s3, from_files_or_dir, to_location, match_glob='*')
 
-        puts "  uploading files from #{describe_from(from_files_or_dir)} to #{to_location}"
+        puts "  uploading #{describe_from(from_files_or_dir)} to #{to_location}"
         process_files(:upload, s3, from_files_or_dir, match_glob, to_location)
       end
       module_function :upload_files
@@ -279,7 +279,7 @@ module Sluice
       # Returns a log-friendly string
       def describe_from(from_files_or_dir_or_loc)
         if from_files_or_dir_or_loc.is_a?(Array)
-          "#{from_files_or_dir_or_loc.length} files"
+          "#{from_files_or_dir_or_loc.length} file(s)"
         else
           "files from #{from_files_or_dir_or_loc}"
         end
@@ -371,12 +371,12 @@ module Sluice
                   # Support raw filenames and also Fog::Storage::AWS::File's
                   if (file.is_a?(Fog::Storage::AWS::File))
                     from_bucket = file.directory.key # Bucket
-                    from_path = file.key
+                    from_path = File.dirname(file.key) # TODO: is no trailing / okay?
                     filepath = file.key
                   else
                     from_bucket = nil # Not used
                     if from_files_or_dir_or_loc.is_a?(Array)
-                      from_path = File.dirname(file) # The whole dir
+                      from_path = File.dirname(file) # TODO: is no trailing / okay?
                     else
                       from_path = from_files_or_dir_or_loc # The root dir
                     end
