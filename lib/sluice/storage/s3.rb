@@ -371,7 +371,7 @@ module Sluice
                   # Support raw filenames and also Fog::Storage::AWS::File's
                   if (file.is_a?(Fog::Storage::AWS::File))
                     from_bucket = file.directory.key # Bucket
-                    from_path = File.dirname(file.key) # TODO: is no trailing / okay?
+                    from_path = Sluice::Storage.trail_slash(File.dirname(file.key))
                     filepath = file.key
                   else
                     from_bucket = nil # Not used
