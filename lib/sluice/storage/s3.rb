@@ -67,12 +67,14 @@ module Sluice
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
       def new_fog_s3_from(region, access_key_id, secret_access_key)
-        Fog::Storage.new({
+        fog = Fog::Storage.new({
           :provider => 'AWS',
           :region => region,
           :aws_access_key_id => access_key_id,
           :aws_secret_access_key => secret_access_key
         })
+        fog.sync_clock
+        fog
       end
       module_function :new_fog_s3_from
 

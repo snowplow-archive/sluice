@@ -34,5 +34,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   # Dependencies
-  gem.add_dependency 'fog', '~> 1.6.0'
+  gem.add_dependency 'fog', '~> 1.14.0'
 end
