@@ -376,7 +376,7 @@ module Sluice
                   else
                     from_bucket = nil # Not used
                     if from_files_or_dir_or_loc.is_a?(Array)
-                      from_path = File.dirname(file) # TODO: is no trailing / okay?
+                      from_path = Sluice::Storage.trail_slash(File.dirname(file))
                     else
                       from_path = from_files_or_dir_or_loc # The root dir
                     end
