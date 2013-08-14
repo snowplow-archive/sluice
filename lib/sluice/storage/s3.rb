@@ -202,7 +202,7 @@ module Sluice
       # +flatten+:: strips off any sub-folders below the from_location
       def copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
 
-        puts "  copying #{describe_from(from_location)} to #{to_location}"
+        puts "  copying inter-account #{describe_from(from_location)} to #{to_location}"
         Dir.mktmpdir do |t|
           tmp = Sluice::Storage.trail_slash(t)
           download_files(from_s3, from_location, tmp, match_regex)
@@ -247,7 +247,7 @@ module Sluice
       # +flatten+:: strips off any sub-folders below the from_location
       def move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
-        puts "  moving #{describe_from(from_location)} to #{to_location}"
+        puts "  moving inter-account #{describe_from(from_location)} to #{to_location}"
         Dir.mktmpdir do |t|
           tmp = Sluice::Storage.trail_slash(t)
           download_files(from_s3, from_location, tmp, match_regex)
