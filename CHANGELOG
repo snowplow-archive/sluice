@@ -1,3 +1,7 @@
+Version 0.0.9 (2013-08-14)
+--------------------------
+Added ability to move and copy files between two different AWS accounts
+
 Version 0.0.8 (2013-08-14)
 --------------------------
 Added in ability to process a list of files rather than an S3 location
