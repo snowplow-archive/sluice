@@ -13,6 +13,7 @@
 # Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
 # License::   Apache License Version 2.0
 
+require 'tmpdir'
 require 'fog'
 require 'thread'
 
@@ -199,12 +200,13 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def copy_files_inter(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
+      def copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
 
         puts "  copying #{describe_from(from_location)} to #{to_location}"
-        Dir.mktmpdir do |tmp|
+        Dir.mktmpdir do |t|
+          tmp = Sluice::Storage.trail_slash(t)
           download_files(from_s3, from_location, tmp, match_regex)
-          upload_files(s3, tmp, to_location, '*') # Upload all files we downloaded
+          upload_files(to_s3, tmp, to_location, '**/*') # Upload all files we downloaded
         end
 
       end
@@ -246,9 +248,10 @@ module Sluice
       def move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving #{describe_from(from_location)} to #{to_location}"
-        Dir.mktmpdir do |tmp|
+        Dir.mktmpdir do |t|
+          tmp = Sluice::Storage.trail_slash(t)
           download_files(from_s3, from_location, tmp, match_regex)
-          upload_files(s3, tmp, to_location, '*') # Upload all files we downloaded
+          upload_files(to_s3, tmp, to_location, '**/*') # Upload all files we downloaded
           delete_files(from_s3, from_location, '.+') # Delete all files we downloaded
         end
 
@@ -385,7 +388,7 @@ module Sluice
           globbed = true
         # Otherwise if it's an upload, we can glob now
         elsif operation == :upload
-          files_to_process = Dir.glob(File.join(from_files_or_dir_or_loc, match_regex_or_glob))
+          files_to_process = glob_files(from_files_or_dir_or_loc, match_regex_or_glob)
           globbed = true
         # Otherwise we'll do threaded globbing later...
         else
@@ -561,6 +564,22 @@ module Sluice
 
       end
       module_function :process_files
+
+      # A helper function to list all files
+      # recursively in a folder
+      #
+      # Parameters:
+      # +dir+:: Directory to list files recursively
+      # +match_regex+:: a regex string to match the files to copy      
+      #
+      # Returns array of files (no sub-directories)
+      def glob_files(dir, glob)
+        Dir.glob(File.join(dir, glob)).select { |f|
+          File.file?(f) # Drop sub-directories
+        }
+      end
+      module_function :glob_files
+
 
       # A helper function to attempt to run a
       # function retries times
