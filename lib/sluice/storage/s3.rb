@@ -196,6 +196,33 @@ module Sluice
       end
       module_function :copy_files
 
+      # Moves files between S3 locations in two different accounts
+      #
+      # Implementation is as follows:
+      # 1. Concurrent download of all files from S3 source to local tmpdir
+      # 2. Concurrent upload of all files
+      #
+      # In other words, the download and upload are not interleaved (which
+      # is inefficient because upload speeds are much lower than download speeds)
+      #
+      # +from_s3+:: A Fog::Storage s3 connection for accessing the from S3Location
+      # +to_s3+:: A Fog::Storage s3 connection for accessing the to S3Location      
+      # +from_location+:: S3Location to move files from
+      # +to_location+:: S3Location to move files to
+      # +match_regex+:: a regex string to match the files to move
+      # +alter_filename_lambda+:: lambda to alter the written filename
+      # +flatten+:: strips off any sub-folders below the from_location
+      def move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+
+        puts "  moving #{describe_from(from_location)} to #{to_location}"
+        Dir.mktmpdir do |tmp|
+          download_files(from_s3, from_location, tmp, match_regex)
+          upload_files(s3, tmp, to_location, '*') # Upload all files we downloaded
+        end
+
+      end
+      module_function :move_files_inter
+
       # Moves files between S3 locations concurrently
       #
       # Parameters:
