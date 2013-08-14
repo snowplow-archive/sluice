@@ -180,6 +180,36 @@ module Sluice
       end
       module_function :delete_files
 
+      # Copies files between S3 locations in two different accounts
+      #
+      # Implementation is as follows:
+      # 1. Concurrent download of all files from S3 source to local tmpdir
+      # 2. Concurrent upload of all files from local tmpdir to S3 target
+      #
+      # In other words, the download and upload are not interleaved (which is
+      # inefficient because upload speeds are much lower than download speeds)
+      #
+      # In other words, the download and upload are not interleaved (which
+      # is inefficient because upload speeds are much lower than download speeds)
+      #
+      # +from_s3+:: A Fog::Storage s3 connection for accessing the from S3Location
+      # +to_s3+:: A Fog::Storage s3 connection for accessing the to S3Location
+      # +from_location+:: S3Location to copy files from
+      # +to_location+:: S3Location to copy files to
+      # +match_regex+:: a regex string to match the files to move
+      # +alter_filename_lambda+:: lambda to alter the written filename
+      # +flatten+:: strips off any sub-folders below the from_location
+      def copy_files_inter(s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
+
+        puts "  copying #{describe_from(from_location)} to #{to_location}"
+        Dir.mktmpdir do |tmp|
+          download_files(from_s3, from_location, tmp, match_regex)
+          upload_files(s3, tmp, to_location, '*') # Upload all files we downloaded
+        end
+
+      end
+      module_function :copy_files_inter
+
       # Copies files between S3 locations concurrently
       #
       # Parameters:
@@ -201,9 +231,10 @@ module Sluice
       # Implementation is as follows:
       # 1. Concurrent download of all files from S3 source to local tmpdir
       # 2. Concurrent upload of all files from local tmpdir to S3 target
+      # 3. Concurrent deletion of all files from S3 source
       #
-      # In other words, the download and upload are not interleaved (which
-      # is inefficient because upload speeds are much lower than download speeds)
+      # In other words, the three operations are not interleaved (which is
+      # inefficient because upload speeds are much lower than download speeds)
       #
       # +from_s3+:: A Fog::Storage s3 connection for accessing the from S3Location
       # +to_s3+:: A Fog::Storage s3 connection for accessing the to S3Location      
@@ -218,6 +249,7 @@ module Sluice
         Dir.mktmpdir do |tmp|
           download_files(from_s3, from_location, tmp, match_regex)
           upload_files(s3, tmp, to_location, '*') # Upload all files we downloaded
+          delete_files(from_s3, from_location, '.+') # Delete all files we downloaded
         end
 
       end
