@@ -200,7 +200,7 @@ module Sluice
       #
       # Implementation is as follows:
       # 1. Concurrent download of all files from S3 source to local tmpdir
-      # 2. Concurrent upload of all files
+      # 2. Concurrent upload of all files from local tmpdir to S3 target
       #
       # In other words, the download and upload are not interleaved (which
       # is inefficient because upload speeds are much lower than download speeds)
