@@ -6,7 +6,7 @@ Version 0.0.8 (2013-08-14)
 --------------------------
 Added in ability to process a list of files rather than an S3 location
 
-Version 0.0.7 (2013-XX-XX)
+Version 0.0.7 (2013-07-12)
 --------------------------
 Added in upload capability
 
