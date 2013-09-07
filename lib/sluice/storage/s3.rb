@@ -17,6 +17,9 @@ require 'tmpdir'
 require 'fog'
 require 'thread'
 
+require 'contracts'
+include Contracts
+
 module Sluice
   module Storage
     module S3
@@ -67,6 +70,7 @@ module Sluice
       # +region+:: Amazon S3 region we will be working with
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
+      Contract String, String, String => Fog::Storage
       def new_fog_s3_from(region, access_key_id, secret_access_key)
         fog = Fog::Storage.new({
           :provider => 'AWS',

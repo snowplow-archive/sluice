@@ -10,10 +10,10 @@ Currently Sluice provides the following very robust, very parallel S3 operations
 * File move within S3 (from/to the same or different AWS accounts)
 * File copy within S3 (from/to the same or different AWS accounts)
 
-Sluice has been extracted from a pair of Ruby ETL applications built by the [SnowPlow Analytics] [snowplow-analytics] team, specifically:
+Sluice has been extracted from a pair of Ruby ETL applications built by the [Snowplow Analytics] [snowplow-analytics] team, specifically:
 
-1. [EmrEtlRunner] [emr-etl-runner], a Ruby application to run the SnowPlow ETL process on Elastic MapReduce
-2. [StorageLoader] [storage-loader], a Ruby application to load SnowPlow event files from Amazon S3 into databases such as Infobright
+1. [EmrEtlRunner] [emr-etl-runner], a Ruby application to run the Snowplow ETL process on Elastic MapReduce
+2. [StorageLoader] [storage-loader], a Ruby application to load Snowplow event files from Amazon S3 into databases such as Redshift and Postgres
 
 ## Installation 
 
@@ -21,7 +21,7 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.0.9'
+    gem 'sluice', '~> 0.1.0'
 
 ## Usage
 
@@ -32,7 +32,7 @@ Rubydoc and usage examples to come.
 To hack on Sluice locally:
 
     $ gem build sluice.gemspec
-    $ sudo gem install sluice-0.0.9.gem
+    $ sudo gem install sluice-0.1.0.gem
 
 To contribute:
 
@@ -44,11 +44,11 @@ To contribute:
 
 ## Credits and thanks
 
-Sluice was developed by [Alex Dean] [alexanderdean] ([SnowPlow Analytics] [snowplow-analytics]) and [Michael Tibben] [mtibben] ([99designs] [99designs]).
+Sluice was developed by [Alex Dean] [alexanderdean] ([Snowplow Analytics] [snowplow-analytics]) and [Michael Tibben] [mtibben] ([99designs] [99designs]).
 
 ## Copyright and license
 
-Sluice is copyright 2012 SnowPlow Analytics Ltd.
+Sluice is copyright 2012-2013 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0] [license] (the "License");
 you may not use this software except in compliance with the License.
@@ -66,7 +66,7 @@ limitations under the License.
 [mtibben]: https://github.com/mtibben
 [99designs]: http://99designs.com
 
-[emr-etl-runner]: https://github.com/snowplow/snowplow/tree/master/3-etl/emr-etl-runner
+[emr-etl-runner]: https://github.com/snowplow/snowplow/tree/master/3-enrich/emr-etl-runner
 [storage-loader]: https://github.com/snowplow/snowplow/tree/master/4-storage/storage-loader
 
 [license]: http://www.apache.org/licenses/LICENSE-2.0
