@@ -38,6 +38,8 @@ module Sluice
       class Location
         attr_reader :bucket, :dir, :s3location
 
+        # Location constructor
+        #
         # Parameters:
         # +s3location+:: the s3 location config string e.g. "bucket/directory"
         def initialize(s3_location)
@@ -61,6 +63,58 @@ module Sluice
         def to_s
           @s3_location
         end
+      end
+
+      # Class to read and maintain a manifest.
+      class Manifest
+        attr_reader :path, :scope
+
+        # Manifest constructor
+        #
+        # Parameters:
+        # +path+:: full path to the manifest file
+        # +scope+:: whether file entries in the
+        #           manifest should be scoped to
+        #           filename, relative path, absolute
+        #           path, or absolute path and bucket
+        Contract String, String => Manifest
+        # TODO: change scope to some sort of Enum  
+        def initialize(path, scope)
+          @path = path
+          # TODO: create an S3 object for the path
+          @scope = scope
+        end
+
+        # Get the current file entries in the manifest
+        #
+        # Returns an Array of Fog Files
+        Contract => Array[Fog::Storage::AWS::File]
+        def get_entries()
+
+        end
+
+        # Add (i.e. append) the following file entries
+        # to the manifest
+        # Files listed previously in the manifest will
+        # be kept in the new manifest file.
+        #
+        # Parameters:
+        # +entries+:: an Array of Fog Files to add to the
+        #             manifest
+        #
+        # Returns nil
+        Contract Array[Fog::Storage::AWS::File] => nil
+        def add_entries(entries)
+
+          existing = get_entries()
+          all = existing ++ xxx
+
+          nil
+        end
+
+        private
+
+        # Helper to xxx
       end
 
       # Helper function to instantiate a new Fog::Storage
