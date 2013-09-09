@@ -590,23 +590,23 @@ module Sluice
               when :upload
                 source = "#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
+                puts "(t#{i})    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
               when :download
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir, flatten)
-                puts "    DOWNLOAD #{source} +-> #{target}"
+                puts "(t#{i})    DOWNLOAD #{source} +-> #{target}"
               when :move
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
+                puts "(t#{i})    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
+                puts "(t#{i})    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
                 source = "#{from_bucket}/#{filepath}"
                 # No target
-                puts "    DELETE x #{source}" 
+                puts "(t#{i})    DELETE x #{source}" 
               end
 
               # Upload is a standalone operation vs move/copy/delete
