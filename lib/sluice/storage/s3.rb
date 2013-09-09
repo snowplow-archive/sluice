@@ -323,6 +323,33 @@ module Sluice
       end
       module_function :copy_files
 
+      # Copies files between S3 locations maintaining a manifest to
+      # avoid copying a file which was copied previously.
+      #
+      # Useful in scenarios such as:
+      # 1. You would like to do a move but only have read permission
+      #    on the source bucket
+      # 2. You would like to do a move but some other process needs
+      #    to use the files after you
+      #
+      # +s3+:: A Fog::Storage s3 connection
+      # +manifest+:: A Sluice::Storage::S3::Manifest object
+      # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to copy files from
+      # +to_location+:: S3Location to copy files to
+      # +match_regex+:: a regex string to match the files to copy
+      # +alter_filename_lambda+:: lambda to alter the written filename
+      # +flatten+:: strips off any sub-folders below the from_location
+      def copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+
+        puts "  copying with manifest #{describe_from(from_files_or_loc)} to #{to_location}"
+        leave = manifest.get_entries() # Files to leave
+        processed = process_files(:copy, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
+        manifest.add_entries(processed)
+
+        processed
+      end
+      module_function :copy_files
+
       # Moves files between S3 locations in two different accounts
       #
       # Implementation is as follows:
