@@ -296,12 +296,14 @@ module Sluice
       def copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
 
         puts "  copying inter-account #{describe_from(from_location)} to #{to_location}"
+        processed = []
         Dir.mktmpdir do |t|
           tmp = Sluice::Storage.trail_slash(t)
-          download_files(from_s3, from_location, tmp, match_regex)
+          processed = download_files(from_s3, from_location, tmp, match_regex)
           upload_files(to_s3, tmp, to_location, '**/*') # Upload all files we downloaded
         end
 
+        processed
       end
       module_function :copy_files_inter
 
@@ -341,13 +343,15 @@ module Sluice
       def move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving inter-account #{describe_from(from_location)} to #{to_location}"
+        processed = []
         Dir.mktmpdir do |t|
           tmp = Sluice::Storage.trail_slash(t)
-          download_files(from_s3, from_location, tmp, match_regex)
+          processed = download_files(from_s3, from_location, tmp, match_regex)
           upload_files(to_s3, tmp, to_location, '**/*') # Upload all files we downloaded
           delete_files(from_s3, from_location, '.+') # Delete all files we downloaded
         end
 
+        processed
       end
       module_function :move_files_inter
 
@@ -494,6 +498,7 @@ module Sluice
         mutex = Mutex.new
         complete = false
         marker_opts = {}
+        processed_files = [] # For manifest updating, determining if any files were moved etc
 
         # If an exception is thrown in a thread that isn't handled, die quickly
         Thread.abort_on_exception = true
@@ -511,7 +516,7 @@ module Sluice
               from_path = false
               match = false
 
-              # Critical section:
+              # First critical section:
               # only allow one thread to modify the array at any time
               mutex.synchronize do
 
@@ -569,6 +574,7 @@ module Sluice
                             else
                               filepath.match(match_regex_or_glob)
                             end
+
                   end
                 end
               end
@@ -648,6 +654,12 @@ module Sluice
                   "      x #{source}",
                   "Problem destroying #{filepath}. Retrying.")
               end
+
+              # Second critical section: we need to update
+              # processed_files in a thread-safe way
+              mutex.synchronize do
+                processed_files << filepath
+              end
             end
           end
         end
@@ -655,6 +667,7 @@ module Sluice
         # Wait for threads to finish
         threads.each { |aThread|  aThread.join }
 
+        processed_files # Return the processed files
       end
       module_function :process_files
 
