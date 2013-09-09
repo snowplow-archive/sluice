@@ -65,9 +65,30 @@ module Sluice
         end
       end
 
+      # Legitimate manifest scopes:
+      # 1. :filename - store only the filename
+      #                in the manifest
+      # 2. :relpath  - store the relative path
+      #                to the file in the manifest
+      # 3. :abspath  - store the absolute path
+      #                to the file in the manifest
+      # 4. :bucket   - store bucket PLUS absolute
+      #                path to the file in the manifest
+      #
+      # TODO: add support for 2-4. Currently only 1 supported 
+      class ManifestScope
+
+        @@scopes = Set.new(:filename) # TODO add :relpath, :abspath, :bucket
+
+        def self.valid?(val)
+          val.is_a? Symbol &&
+            @@scopes.include?(val)
+        end
+      end
+
       # Class to read and maintain a manifest.
       class Manifest
-        attr_reader :path, :scope
+        attr_reader :s3_location, :scope
 
         # Manifest constructor
         #
@@ -77,20 +98,26 @@ module Sluice
         #           manifest should be scoped to
         #           filename, relative path, absolute
         #           path, or absolute path and bucket
-        Contract String, String => Manifest
-        # TODO: change scope to some sort of Enum  
-        def initialize(path, scope)
-          @path = path
-          # TODO: create an S3 object for the path
+        Contract Location, ManifestScope => Manifest
+        def initialize(s3_location, scope)
+          @s3_location = s3_location
           @scope = scope
+          @manifest_file = "sluice-%s-manifest" % scope.to_s
         end
 
         # Get the current file entries in the manifest
         #
-        # Returns an Array of Fog Files
-        Contract => Array[Fog::Storage::AWS::File]
-        def get_entries()
+        # Parameters:
+        # +s3+:: A Fog::Storage s3 connection
+        #
+        # Returns an Array of filenames as Strings
+        Contract Fog::Storage => Array[String]
+        def get_entries(s3)
 
+          manifest = get_manifest(s3, @s3_location, @manifest_file)
+          if manifest.nil? return []
+
+          manifest.body.split("\n").reject(&:empty?)
         end
 
         # Add (i.e. append) the following file entries
@@ -99,22 +126,30 @@ module Sluice
         # be kept in the new manifest file.
         #
         # Parameters:
-        # +entries+:: an Array of Fog Files to add to the
-        #             manifest
+        # +s3+:: A Fog::Storage s3 connection
+        # +entries+:: an Array of filenames as Strings
         #
-        # Returns nil
-        Contract Array[Fog::Storage::AWS::File] => nil
-        def add_entries(entries)
+        # Returns all entries now in the manifest
+        Contract Fog::Storage, Array[String] => Array[String]
+        def add_entries(s3, entries)
 
-          existing = get_entries()
-          all = existing ++ xxx
+          existing = get_entries(s3)
+          all = existing + entries
 
-          nil
+          manifest = get_manifest_file(s3, @s3_location, @manifest_file)
+          manifest.body = all.join("\n")
+          manifest.save
+
+          all
         end
 
         private
 
-        # Helper to xxx
+        # Helper to get the manifest file
+        def get_manifest_file(s3, s3_location, filename)
+          s3.directories.get(s3_location.bucket, prefix: s3_location.dir).files.get(filename) # TODO: break out into new generic get_file() procedure
+        end
+
       end
 
       # Helper function to instantiate a new Fog::Storage
