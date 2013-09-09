@@ -13,6 +13,7 @@
 # Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
 # License::   Apache License Version 2.0
 
+require 'set'
 require 'tmpdir'
 require 'fog'
 require 'thread'
@@ -31,6 +32,10 @@ module Sluice
       CONCURRENCY = 10 # Threads
       RETRIES = 3      # Attempts
       RETRY_WAIT = 10  # Seconds
+
+      # Aliases for Contracts
+      FogStorage = Fog::Storage::AWS::Real
+      FogFile = Fog::Storage::AWS::File
 
       # Class to describe an S3 location
       # TODO: if we are going to impose trailing line-breaks on
@@ -78,17 +83,17 @@ module Sluice
       # TODO: add support for 2-4. Currently only 1 supported 
       class ManifestScope
 
-        @@scopes = Set.new(:filename) # TODO add :relpath, :abspath, :bucket
+        @@scopes = Set::[](:filename) # TODO add :relpath, :abspath, :bucket
 
         def self.valid?(val)
-          val.is_a? Symbol &&
+          val.is_a?(Symbol) &&
             @@scopes.include?(val)
         end
       end
 
       # Class to read and maintain a manifest.
       class Manifest
-        attr_reader :s3_location, :scope
+        attr_reader :s3_location, :scope, :manifest_file
 
         # Manifest constructor
         #
@@ -98,11 +103,12 @@ module Sluice
         #           manifest should be scoped to
         #           filename, relative path, absolute
         #           path, or absolute path and bucket
-        Contract Location, ManifestScope => Manifest
+        Contract Location, ManifestScope => nil
         def initialize(s3_location, scope)
           @s3_location = s3_location
           @scope = scope
-          @manifest_file = "sluice-%s-manifest" % scope.to_s
+          @manifest_file = "%ssluice-%s-manifest" % [s3_location.dir_as_path, scope.to_s]
+          nil
         end
 
         # Get the current file entries in the manifest
@@ -111,11 +117,13 @@ module Sluice
         # +s3+:: A Fog::Storage s3 connection
         #
         # Returns an Array of filenames as Strings
-        Contract Fog::Storage => Array[String]
+        Contract FogStorage => ArrayOf[String]
         def get_entries(s3)
 
-          manifest = get_manifest(s3, @s3_location, @manifest_file)
-          if manifest.nil? return []
+          manifest = self.class.get_manifest(s3, @s3_location, @manifest_file)
+          if manifest.nil?
+            return []
+          end
 
           manifest.body.split("\n").reject(&:empty?)
         end
@@ -130,15 +138,26 @@ module Sluice
         # +entries+:: an Array of filenames as Strings
         #
         # Returns all entries now in the manifest
-        Contract Fog::Storage, Array[String] => Array[String]
+        Contract FogStorage, ArrayOf[String] => ArrayOf[String]
         def add_entries(s3, entries)
 
           existing = get_entries(s3)
-          all = existing + entries
+          filenames = entries.map { |filepath|
+            File.basename(filepath)
+          } # TODO: update when non-filename-based manifests supported
+          all = (existing + filenames)
 
-          manifest = get_manifest_file(s3, @s3_location, @manifest_file)
-          manifest.body = all.join("\n")
-          manifest.save
+          manifest = self.class.get_manifest(s3, @s3_location, @manifest_file)
+          body = all.join("\n")
+          if manifest.nil?
+            bucket = s3.directories.get(s3_location.bucket).files.create(
+              :key  => @manifest_file,
+              :body => body
+            )
+          else
+            manifest.body = body
+            manifest.save
+          end
 
           all
         end
@@ -146,7 +165,8 @@ module Sluice
         private
 
         # Helper to get the manifest file
-        def get_manifest_file(s3, s3_location, filename)
+        # Contract FogStorage, Location, String => Or[FogFile, nil] TODO: fix this. Expected: File, Actual: <Fog::Storage::AWS::File>
+        def self.get_manifest(s3, s3_location, filename)
           s3.directories.get(s3_location.bucket, prefix: s3_location.dir).files.get(filename) # TODO: break out into new generic get_file() procedure
         end
 
@@ -159,7 +179,7 @@ module Sluice
       # +region+:: Amazon S3 region we will be working with
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
-      Contract String, String, String => Fog::Storage
+      Contract String, String, String => FogStorage
       def new_fog_s3_from(region, access_key_id, secret_access_key)
         fog = Fog::Storage.new({
           :provider => 'AWS',
@@ -257,7 +277,7 @@ module Sluice
       def download_files(s3, from_files_or_loc, to_directory, match_regex='.+')
 
         puts "  downloading #{describe_from(from_files_or_loc)} to #{to_directory}"
-        process_files(:download, s3, from_files_or_loc, match_regex, to_directory)
+        process_files(:download, s3, from_files_or_loc, [], match_regex, to_directory)
       end
       module_function :download_files    
 
@@ -270,7 +290,7 @@ module Sluice
       def delete_files(s3, from_files_or_loc, match_regex='.+')
 
         puts "  deleting #{describe_from(from_files_or_loc)}"
-        process_files(:delete, s3, from_files_or_loc, match_regex)
+        process_files(:delete, s3, from_files_or_loc, [], match_regex)
       end
       module_function :delete_files
 
@@ -319,7 +339,7 @@ module Sluice
       def copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying #{describe_from(from_files_or_loc)} to #{to_location}"
-        process_files(:copy, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
+        process_files(:copy, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :copy_files
 
@@ -342,13 +362,13 @@ module Sluice
       def copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying with manifest #{describe_from(from_files_or_loc)} to #{to_location}"
-        leave = manifest.get_entries() # Files to leave
-        processed = process_files(:copy, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
-        manifest.add_entries(processed)
+        ignore = manifest.get_entries(s3) # Files to leave untouched
+        processed = process_files(:copy, s3, from_files_or_loc, ignore, match_regex, to_location, alter_filename_lambda, flatten)
+        manifest.add_entries(s3, processed)
 
         processed
       end
-      module_function :copy_files
+      module_function :copy_files_manifest
 
       # Moves files between S3 locations in two different accounts
       #
@@ -394,7 +414,7 @@ module Sluice
       def move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving #{describe_from(from_files_or_loc)} to #{to_location}"
-        process_files(:move, s3, from_files_or_loc, match_regex, to_location, alter_filename_lambda, flatten)
+        process_files(:move, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
       end
       module_function :move_files
 
@@ -408,7 +428,7 @@ module Sluice
       def upload_files(s3, from_files_or_dir, to_location, match_glob='*')
 
         puts "  uploading #{describe_from(from_files_or_dir)} to #{to_location}"
-        process_files(:upload, s3, from_files_or_dir, match_glob, to_location)
+        process_files(:upload, s3, from_files_or_dir, [], match_glob, to_location)
       end
       module_function :upload_files
 
@@ -481,13 +501,14 @@ module Sluice
       #
       # Parameters:
       # +operation+:: Operation to perform. :download, :upload, :copy, :delete, :move supported
+      # +ignore+:: Array of filenames to ignore (used by manifest code)
       # +s3+:: A Fog::Storage s3 connection
       # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, local directory or S3Location to process files from
       # +match_regex_or_glob+:: a regex or glob string to match the files to process
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_loc_or_dir
-      def process_files(operation, s3, from_files_or_dir_or_loc, match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
+      def process_files(operation, s3, from_files_or_dir_or_loc, ignore=[], match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
@@ -535,7 +556,8 @@ module Sluice
 
           # Each thread pops a file off the files_to_process array, and moves it.
           # We loop until there are no more files
-          threads << Thread.new do
+          threads << Thread.new(i) do |thread_idx|
+
             loop do
               file = false
               filepath = false
@@ -611,6 +633,8 @@ module Sluice
 
               # Name file
               basename = get_basename(filepath)
+              break if ignore.include?(basename) # Don't process if in our leave list
+
               if alter_filename_lambda.class == Proc
                 filename = alter_filename_lambda.call(basename)
               else
@@ -623,23 +647,23 @@ module Sluice
               when :upload
                 source = "#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "(t#{i})    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
+                puts "(t#{thread_idx})    UPLOAD #{source} +-> #{to_loc_or_dir.bucket}/#{target}"                
               when :download
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir, flatten)
-                puts "(t#{i})    DOWNLOAD #{source} +-> #{target}"
+                puts "(t#{thread_idx})    DOWNLOAD #{source} +-> #{target}"
               when :move
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "(t#{i})    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
+                puts "(t#{thread_idx})    MOVE #{source} -> #{to_loc_or_dir.bucket}/#{target}"
               when :copy
                 source = "#{from_bucket}/#{filepath}"
                 target = name_file(filepath, filename, from_path, to_loc_or_dir.dir_as_path, flatten)
-                puts "(t#{i})    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
+                puts "(t#{thread_idx})    COPY #{source} +-> #{to_loc_or_dir.bucket}/#{target}"
               when :delete
                 source = "#{from_bucket}/#{filepath}"
                 # No target
-                puts "(t#{i})    DELETE x #{source}" 
+                puts "(t#{thread_idx})    DELETE x #{source}" 
               end
 
               # Upload is a standalone operation vs move/copy/delete
@@ -733,7 +757,7 @@ module Sluice
           sleep(RETRY_WAIT)  # Give us a bit of time before retrying
           i += 1
           retry
-        end        
+        end
       end
       module_function :retry_x
 
