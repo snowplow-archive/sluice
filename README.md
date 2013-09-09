@@ -8,7 +8,7 @@ Currently Sluice provides the following very robust, very parallel S3 operations
 * File download from S3
 * File delete from S3
 * File move within S3 (from/to the same or different AWS accounts)
-* File copy within S3 (from/to the same or different AWS accounts)
+* File copy within S3 (from/to the same or different AWS accounts; optionally using a manifest)
 
 Sluice has been extracted from a pair of Ruby ETL applications built by the [Snowplow Analytics] [snowplow-analytics] team, specifically:
 
