@@ -35,7 +35,7 @@ module Sluice
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
-      FogFile = Fog::Storage::AWS::File
+      # FogFile = Fog::Storage::AWS::File TODO: fix - gives: warning: toplevel constant File referenced by Fog::Storage::AWS::File
 
       # Class to describe an S3 location
       # TODO: if we are going to impose trailing line-breaks on
