@@ -633,7 +633,7 @@ module Sluice
 
               # Name file
               basename = get_basename(filepath)
-              break if ignore.include?(basename) # Don't process if in our leave list
+              next if ignore.include?(basename) # Don't process if in our leave list
 
               if alter_filename_lambda.class == Proc
                 filename = alter_filename_lambda.call(basename)
