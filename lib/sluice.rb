@@ -19,5 +19,5 @@ require 'sluice/storage/s3'
 
 module Sluice
   NAME    = "sluice"
-  VERSION = "0.1.2"
+  VERSION = "0.1.3"
 end
