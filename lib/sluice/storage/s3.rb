@@ -36,7 +36,7 @@ module Sluice
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
-      FogFile = Fog::Storage::AWS::File
+      # FogFile = Fog::Storage::AWS::File TODO: fix - gives: warning: toplevel constant File referenced by Fog::Storage::AWS::File
 
       # Class to describe an S3 location
       # TODO: if we are going to impose trailing line-breaks on
@@ -634,7 +634,7 @@ module Sluice
 
               # Name file
               basename = get_basename(filepath)
-              break if ignore.include?(basename) # Don't process if in our leave list
+              next if ignore.include?(basename) # Don't process if in our leave list
 
               if alter_filename_lambda.class == Proc
                 filename = alter_filename_lambda.call(basename)
