@@ -32,6 +32,7 @@ module Sluice
       CONCURRENCY = 10 # Threads
       RETRIES = 3      # Attempts
       RETRY_WAIT = 10  # Seconds
+      TIMEOUT_WAIT = 100 # Waiting longer reduces the chance that whatever caused the timeout recurs
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
@@ -737,7 +738,6 @@ module Sluice
       end
       module_function :glob_files
 
-
       # A helper function to attempt to run a
       # function retries times
       #
@@ -749,8 +749,10 @@ module Sluice
       def retry_x(object, send_args, retries, attempt_msg, failure_msg)
         i = 0
         begin
-          object.send(*send_args)
-          puts attempt_msg
+          Timeout::timeout(TIMEOUT_WAIT) do # In case our operation times out
+            object.send(*send_args)
+            puts attempt_msg
+          end
         rescue
           raise unless i < retries
           puts failure_msg
