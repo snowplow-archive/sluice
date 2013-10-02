@@ -33,7 +33,7 @@ module Sluice
       CONCURRENCY = 10 # Threads
       RETRIES = 3      # Attempts
       RETRY_WAIT = 10  # Seconds
-      TIMEOUT_WAIT = 100 # Waiting longer reduces the chance that whatever caused the timeout recurs
+      TIMEOUT_WAIT = 1800 # 30 mins should let even large files upload. +1 https://github.com/snowplow/sluice/issues/7 if this is insufficient or excessive
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
