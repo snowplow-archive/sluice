@@ -17,6 +17,7 @@ require 'set'
 require 'tmpdir'
 require 'fog'
 require 'thread'
+require 'timeout'
 
 require 'contracts'
 include Contracts
@@ -742,7 +743,8 @@ module Sluice
       # function retries times
       #
       # Parameters:
-      # +function+:: Function to run
+      # +object+:: Object to send our function to
+      # +send_args+:: Function plus arguments
       # +retries+:: Number of retries to attempt
       # +attempt_msg+:: Message to puts on each attempt
       # +failure_msg+:: Message to puts on each failure
@@ -776,7 +778,7 @@ module Sluice
       # +add_path+:: If this is set, add this to the front of the path
       # +flatten+:: strips off any sub-folders below the from_location
       #
-      # TODO: this really needs unit tests
+      # TODO: this badly needs unit tests
       def name_file(filepath, new_filename, remove_path=nil, add_path=nil, flatten=false)
 
         # First, replace the filename in filepath with new one
