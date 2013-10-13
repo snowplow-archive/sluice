@@ -264,7 +264,7 @@ module Sluice
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to check
       def is_empty?(s3, location)
-        list_files(s3, location).length <= 1
+        list_files(s3, location).length == 0
       end
       module_function :is_empty?
 
