@@ -4,7 +4,7 @@ Updated alter_filename_lambda to accept original filepath as 2nd arg (#19)      
 Added gem button to README (#18)
 Added Coveralls code coverage to project (#17)                                   - TODO
 Added Travis button to README (#16)                                              - TODO
-Added initial unit tests (#15)                                                   - TODO
+Added initial unit tests (#15)
 Added in FogFile = Fog::Storage::AWS::File-based contracts (#12)
 Added additional contracts (#20)
 Broke up s3.rb into separate files (#21)

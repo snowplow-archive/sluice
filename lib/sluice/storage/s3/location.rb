@@ -25,7 +25,7 @@ module Sluice
       # buckets, maybe we should make that clearer?
       class Location
         
-        attr_reader :bucket, :dir, :s3location
+        attr_reader :bucket, :dir
 
         # Location constructor
         #
