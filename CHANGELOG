@@ -1,3 +1,15 @@
+Version 0.2.0 (2014-05-XX)
+--------------------------
+Updated alter_filename_lambda to accept original filepath as 2nd arg (#19)       - TODO
+Added gem button to README (#18)                                                 - TODO
+Added Coveralls code coverage to project (#17)                                   - TODO
+Added Travis button to README (#16)                                              - TODO
+Added initial unit tests (#15)                                                   - TODO
+Added in FogFile = Fog::Storage::AWS::File-based contracts (#12)                 - TODO
+Overrode equality operator for S3::Location to support tests (#10)               - TODO
+Fixed break bugs in core Sluice process flow (#6)                                - TODO
+Made is_empty? work if another folder starts with the same name as this one (#5) - TODO
+
 Version 0.1.5 (2013-10-13)
 --------------------------
 Fixed is_empty? returns true if folder contains 1 file (#9)
