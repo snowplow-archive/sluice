@@ -34,8 +34,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   # Dependencies
-  gem.add_dependency 'fog', '~> 1.22.0'
   gem.add_dependency 'contracts', '~> 0.4'
+  gem.add_dependency 'fog', '~> 1.22.0'
 
   gem.add_development_dependency "rspec", "~> 2.14.1"
   gem.add_development_dependency "rspec-nc"
