@@ -1,4 +1,8 @@
 # Sluice
+[![Gem Version](https://badge.fury.io/rb/sluice.svg)](http://badge.fury.io/rb/sluice)
+[![Build Status](https://travis-ci.org/snowplow/sluice.png)](https://travis-ci.org/snowplow/sluice)
+[![Code Climate](https://codeclimate.com/github/snowplow/sluice.png)](https://codeclimate.com/github/snowplow/sluice)
+[![Coverage Status](https://coveralls.io/repos/snowplow/sluice/badge.png)](https://coveralls.io/r/snowplow/sluice)
 
 Sluice is a Ruby gem (built with [Bundler] [bundler]) to help you build cloud-friendly ETL (extract, transform, load) processes.
 
