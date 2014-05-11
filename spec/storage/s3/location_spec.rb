@@ -14,7 +14,6 @@
 # License::   Apache License Version 2.0
 
 require 'spec_helper'
-require 'sluice/storage/s3/location'
 
 Location = Sluice::Storage::S3::Location
 
