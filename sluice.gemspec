@@ -35,10 +35,11 @@ Gem::Specification.new do |gem|
 
   # Dependencies
   gem.add_dependency 'fog', '~> 1.14.0'
-  gem.add_dependency 'contracts', '~> 0.2.3'
+  gem.add_dependency 'contracts', '~> 0.4'
 
   gem.add_development_dependency "rspec", "~> 2.14.1"
   gem.add_development_dependency "rspec-nc"
   gem.add_development_dependency "guard"
   gem.add_development_dependency "guard-rspec"
+  gem.add_development_dependency "coveralls"
 end

@@ -1,8 +1,9 @@
 Version 0.2.0 (2014-05-XX)
 --------------------------
 Updated alter_filename_lambda to accept original filepath as 2nd arg (#19)       - TODO
+Bumped Contracts to 0.4 (#22)
 Added gem button to README (#18)
-Added Coveralls code coverage to project (#17)                                   - TODO
+Added Coveralls code coverage to project (#17)
 Added Travis support to project (#16)
 Added initial unit tests (#15)
 Added in FogFile = Fog::Storage::AWS::File-based contracts (#12)
