@@ -25,7 +25,7 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.1.0'
+    gem 'sluice', '~> 0.2.0'
 
 ## Usage
 
@@ -36,7 +36,7 @@ Rubydoc and usage examples to come.
 To hack on Sluice locally:
 
     $ gem build sluice.gemspec
-    $ sudo gem install sluice-0.1.0.gem
+    $ sudo gem install sluice-0.2.0.gem
 
 To contribute:
 
