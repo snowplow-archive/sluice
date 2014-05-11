@@ -1,6 +1,7 @@
 Version 0.2.0 (2014-05-XX)
 --------------------------
 Bumped Contracts to 0.4 (#22)
+Bumped Fog to 1.22.0 (#24)
 Added gem button to README (#18)
 Added Coveralls code coverage to project (#17)
 Added Code Climate button to README (#23)
