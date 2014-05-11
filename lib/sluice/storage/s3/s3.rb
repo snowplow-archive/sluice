@@ -107,7 +107,7 @@ module Sluice
       #
       # Returns the basename, or nil if the
       # path is to a folder
-      Contract => String
+      Contract nil => String
       def get_basename(path)
         if is_folder?(path)
           nil

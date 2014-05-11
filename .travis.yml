@@ -1,13 +1,10 @@
 language: ruby
+cache: bundler
+
 rvm:
   - 1.9.3
-  - jruby-19mode
+  - jruby
   - 2.0.0
   - 2.1.0
 
-install:
- - "gem install contracts"
- - "gem install rspec"
- - "gem install webmock"
-
-script: rspec
+script: 'bundle exec rake'

@@ -43,7 +43,7 @@ module Sluice
           self
         end
 
-        Contract => String
+        Contract nil => String
         def dir_as_path
           if @dir.length > 0
             return @dir+'/'
@@ -52,7 +52,7 @@ module Sluice
           end
         end
 
-        Contract => String
+        Contract nil => String
         def to_s
           @s3_location
         end
