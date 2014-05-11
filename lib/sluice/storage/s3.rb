@@ -50,6 +50,7 @@ module Sluice
         #
         # Parameters:
         # +s3location+:: the s3 location config string e.g. "bucket/directory"
+        Contract String => Location
         def initialize(s3_location)
           @s3_location = s3_location
 
@@ -58,8 +59,10 @@ module Sluice
 
           @bucket = s3_location_match[1]
           @dir = s3_location_match[2]
+          self
         end
 
+        Contract => String
         def dir_as_path
           if @dir.length > 0
             return @dir+'/'
@@ -68,6 +71,7 @@ module Sluice
           end
         end
 
+        Contract => String
         def to_s
           @s3_location
         end
