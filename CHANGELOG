@@ -5,7 +5,8 @@ Added gem button to README (#18)
 Added Coveralls code coverage to project (#17)                                   - TODO
 Added Travis button to README (#16)                                              - TODO
 Added initial unit tests (#15)                                                   - TODO
-Added in FogFile = Fog::Storage::AWS::File-based contracts (#12)                 - TODO
+Added in FogFile = Fog::Storage::AWS::File-based contracts (#12)
+Added additional contracts (#20)
 Overrode equality operator for S3::Location to support tests (#10)               - TODO
 Fixed break bugs in core Sluice process flow (#6)                                - TODO
 Made is_empty? work if another folder starts with the same name as this one (#5) - TODO

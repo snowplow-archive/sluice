@@ -16,6 +16,7 @@
 require 'set'
 require 'tmpdir'
 require 'fog'
+require 'fog/aws/models/storage/file'
 require 'thread'
 require 'timeout'
 
@@ -37,7 +38,7 @@ module Sluice
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
-      # FogFile = Fog::Storage::AWS::File TODO: fix - gives: warning: toplevel constant File referenced by Fog::Storage::AWS::File
+      FogFile = Fog::Storage::AWS::File
 
       # Class to describe an S3 location
       # TODO: if we are going to impose trailing line-breaks on
@@ -167,7 +168,7 @@ module Sluice
         private
 
         # Helper to get the manifest file
-        # Contract FogStorage, Location, String => Or[FogFile, nil] TODO: fix this. Expected: File, Actual: <Fog::Storage::AWS::File>
+        Contract FogStorage, Location, String => Maybe[FogFile]
         def self.get_manifest(s3, s3_location, filename)
           s3.directories.get(s3_location.bucket, prefix: s3_location.dir).files.get(filename) # TODO: break out into new generic get_file() procedure
         end
@@ -201,6 +202,7 @@ module Sluice
       # +location+:: The location to return files from
       #
       # Returns array of Fog::Storage::AWS::File's
+      Contract FogStorage, Location => ArrayOf[FogFile]
       def list_files(s3, location)
         files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir).files
 
@@ -220,6 +222,7 @@ module Sluice
       # +path+:: S3 path in String form
       #
       # Returns boolean
+      Contract String => Bool
       def is_folder?(path)
         (path.end_with?('_$folder$') || # EMR-created
           path.end_with?('/'))
@@ -232,6 +235,7 @@ module Sluice
       # +path+:: S3 path in String form
       #
       # Returns boolean
+      Contract String => Bool
       def is_file?(path)
         !is_folder?(path)
       end
@@ -244,6 +248,7 @@ module Sluice
       #
       # Returns the basename, or nil if the
       # path is to a folder
+      Contract => String
       def get_basename(path)
         if is_folder?(path)
           nil
@@ -263,6 +268,7 @@ module Sluice
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to check
+      Contract FogStorage, Location => Bool
       def is_empty?(s3, location)
         list_files(s3, location).length == 0
       end
