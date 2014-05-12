@@ -462,15 +462,14 @@ module Sluice
                   match = true # Match is implicit in the glob
                 else
 
-                  while !complete && !match do
+                  while !match do
                     if files_to_process.size == 0
                       # S3 batches 1000 files per request.
                       # We load up our array with the files to move
                       files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts)
                       # If we don't have any files after the S3 request, we're complete
                       if files_to_process.size == 0
-                        complete = true
-                        next
+                        break
                       else
                         marker_opts['marker'] = files_to_process.last.key
 
@@ -485,6 +484,7 @@ module Sluice
                     from_path = from_loc.dir_as_path
                     filepath = file.key
 
+                    # TODO: clean up following https://github.com/snowplow/sluice/issues/25
                     match = if match_regex_or_glob.is_a? NegativeRegex
                               !filepath.match(match_regex_or_glob.regex)
                             else
@@ -494,9 +494,10 @@ module Sluice
                   end
                 end
               end
+              # End of mutex.synchronize
 
-              break unless match
-              break if is_folder?(filepath)
+              next unless match
+              next if is_folder?(filepath)
 
               # Name file
               basename = get_basename(filepath)

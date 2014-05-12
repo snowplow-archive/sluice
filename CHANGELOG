@@ -12,7 +12,7 @@ Added additional contracts (#20)
 Broke up s3.rb into separate files (#21)
 Updated alter_filename_lambda to accept original filepath as 2nd arg (#19)       - TODO
 Overrode equality operator for S3::Location to support tests (#10)
-Fixed break bugs in core Sluice process flow (#6)                                - TODO
+Fixed break bugs in core Sluice process flow (#6)
 Made is_empty? work if another folder starts with the same name as this one (#5) - TODO
 
 Version 0.1.5 (2013-10-13)
