@@ -22,8 +22,8 @@ describe S3 do
   it 'should allow filenames to be renamed' do
 
     concat_subdir = lambda { |basename, filepath|
-      if m = filepath.match('([^/]+)/([^/]+)$')
-        return m[1] + '-' + m[2]
+      if m = filepath.match('([^/]+)/[^/]+$')
+        return m[1] + '-' + basename
       else
         return filepath
       end
