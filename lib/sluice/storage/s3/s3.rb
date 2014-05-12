@@ -63,7 +63,7 @@ module Sluice
       # Returns array of Fog::Storage::AWS::File's
       Contract FogStorage, Location => ArrayOf[FogFile]
       def list_files(s3, location)
-        files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir).files
+        files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir_as_path).files
 
         files = [] # Can't use a .select because of Ruby deep copy issues (array of non-POROs)
         files_and_dirs.each { |f|
