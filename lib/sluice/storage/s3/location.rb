@@ -56,6 +56,20 @@ module Sluice
         def to_s
           @s3_location
         end
+
+        Contract Any => Bool
+        def ==(o)
+          o.class == self.class && o.state == state
+        end
+        alias_method :eql?, :==
+
+      protected
+
+        Contract nil => [String, String, String]
+        def state
+          [@s3_location, @bucket, @dir]
+        end
+
       end
 
     end

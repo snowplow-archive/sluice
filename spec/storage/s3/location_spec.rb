@@ -35,4 +35,13 @@ describe Location do
     loc.to_s.should eql 's3n://my-s3n-bucket/'
   end
 
+  it 'should support object equality tests' do
+    loc1 = Location.new('s3n://my-s3n-bucket/hello/blah/')
+    loc2 = Location.new('s3n://my-s3n-bucket/hello/blah/')
+    loc1.should eql loc2
+    loc2.should eql loc1
+    loc1.should == loc2
+    loc2.should == loc1
+  end
+
 end
