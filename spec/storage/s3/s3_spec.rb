@@ -25,7 +25,7 @@ describe S3 do
       if m = filepath.match('([^/]+)/[^/]+$')
         return m[1] + '-' + basename
       else
-        return filepath
+        return basename
       end
     }
 
