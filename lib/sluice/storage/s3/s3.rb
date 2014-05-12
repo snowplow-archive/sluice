@@ -503,11 +503,7 @@ module Sluice
               basename = get_basename(filepath)
               next if ignore.include?(basename) # Don't process if in our leave list
 
-              if alter_filename_lambda.class == Proc
-                filename = alter_filename_lambda.call(basename)
-              else
-                filename = basename
-              end
+              filename = rename_file(filepath, basename, alter_filename_lambda)
 
               # What are we doing? Let's determine source and target
               # Note that target excludes bucket name where relevant
@@ -589,6 +585,27 @@ module Sluice
         processed_files # Return the processed files
       end
       module_function :process_files
+
+      # A helper function to rename a file
+      # TODO: fixup lambda to be Maybe[Proc]
+      Contract String, Maybe[String], Or[Proc, Bool] => Maybe[String]
+      def self.rename_file(filepath, basename, lambda=false)
+
+        if lambda.class == Proc
+          case lambda.arity
+          when 2
+            lambda.call(basename, filepath)
+          when 1
+            lambda.call(basename)
+          when 0
+            lambda.call()
+          else
+            raise StorageOperationError "Expect arity of 0, 1 or 2 for alter_filename_lambda, not #{alter_filename_lambda.arity}"
+          end
+        else
+          basename
+        end
+      end
 
       # A helper function to list all files
       # recursively in a folder
