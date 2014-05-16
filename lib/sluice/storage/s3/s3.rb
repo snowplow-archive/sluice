@@ -1,4 +1,4 @@
-# Copyright (c) 2012 SnowPlow Analytics Ltd. All rights reserved.
+# Copyright (c) 2012-2014 Snowplow Analytics Ltd. All rights reserved.
 #
 # This program is licensed to you under the Apache License Version 2.0,
 # and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,10 +10,9 @@
 # See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 
 # Authors::   Alex Dean (mailto:support@snowplowanalytics.com), Michael Tibben
-# Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
+# Copyright:: Copyright (c) 2012-2014 Snowplow Analytics Ltd
 # License::   Apache License Version 2.0
 
-require 'set'
 require 'tmpdir'
 require 'fog'
 require 'thread'
@@ -34,145 +33,6 @@ module Sluice
       RETRIES = 3      # Attempts
       RETRY_WAIT = 10  # Seconds
       TIMEOUT_WAIT = 1800 # 30 mins should let even large files upload. +1 https://github.com/snowplow/sluice/issues/7 if this is insufficient or excessive
-
-      # Aliases for Contracts
-      FogStorage = Fog::Storage::AWS::Real
-      # FogFile = Fog::Storage::AWS::File TODO: fix - gives: warning: toplevel constant File referenced by Fog::Storage::AWS::File
-
-      # Class to describe an S3 location
-      # TODO: if we are going to impose trailing line-breaks on
-      # buckets, maybe we should make that clearer?
-      class Location
-        attr_reader :bucket, :dir, :s3location
-
-        # Location constructor
-        #
-        # Parameters:
-        # +s3location+:: the s3 location config string e.g. "bucket/directory"
-        def initialize(s3_location)
-          @s3_location = s3_location
-
-          s3_location_match = s3_location.match('^s3n?://([^/]+)/?(.*)/$')
-          raise ArgumentError, 'Bad S3 location %s' % s3_location unless s3_location_match
-
-          @bucket = s3_location_match[1]
-          @dir = s3_location_match[2]
-        end
-
-        def dir_as_path
-          if @dir.length > 0
-            return @dir+'/'
-          else
-            return ''
-          end
-        end
-
-        def to_s
-          @s3_location
-        end
-      end
-
-      # Legitimate manifest scopes:
-      # 1. :filename - store only the filename
-      #                in the manifest
-      # 2. :relpath  - store the relative path
-      #                to the file in the manifest
-      # 3. :abspath  - store the absolute path
-      #                to the file in the manifest
-      # 4. :bucket   - store bucket PLUS absolute
-      #                path to the file in the manifest
-      #
-      # TODO: add support for 2-4. Currently only 1 supported 
-      class ManifestScope
-
-        @@scopes = Set::[](:filename) # TODO add :relpath, :abspath, :bucket
-
-        def self.valid?(val)
-          val.is_a?(Symbol) &&
-            @@scopes.include?(val)
-        end
-      end
-
-      # Class to read and maintain a manifest.
-      class Manifest
-        attr_reader :s3_location, :scope, :manifest_file
-
-        # Manifest constructor
-        #
-        # Parameters:
-        # +path+:: full path to the manifest file
-        # +scope+:: whether file entries in the
-        #           manifest should be scoped to
-        #           filename, relative path, absolute
-        #           path, or absolute path and bucket
-        Contract Location, ManifestScope => nil
-        def initialize(s3_location, scope)
-          @s3_location = s3_location
-          @scope = scope
-          @manifest_file = "%ssluice-%s-manifest" % [s3_location.dir_as_path, scope.to_s]
-          nil
-        end
-
-        # Get the current file entries in the manifest
-        #
-        # Parameters:
-        # +s3+:: A Fog::Storage s3 connection
-        #
-        # Returns an Array of filenames as Strings
-        Contract FogStorage => ArrayOf[String]
-        def get_entries(s3)
-
-          manifest = self.class.get_manifest(s3, @s3_location, @manifest_file)
-          if manifest.nil?
-            return []
-          end
-
-          manifest.body.split("\n").reject(&:empty?)
-        end
-
-        # Add (i.e. append) the following file entries
-        # to the manifest
-        # Files listed previously in the manifest will
-        # be kept in the new manifest file.
-        #
-        # Parameters:
-        # +s3+:: A Fog::Storage s3 connection
-        # +entries+:: an Array of filenames as Strings
-        #
-        # Returns all entries now in the manifest
-        Contract FogStorage, ArrayOf[String] => ArrayOf[String]
-        def add_entries(s3, entries)
-
-          existing = get_entries(s3)
-          filenames = entries.map { |filepath|
-            File.basename(filepath)
-          } # TODO: update when non-filename-based manifests supported
-          all = (existing + filenames)
-
-          manifest = self.class.get_manifest(s3, @s3_location, @manifest_file)
-          body = all.join("\n")
-          if manifest.nil?
-            bucket = s3.directories.get(s3_location.bucket).files.create(
-              :key  => @manifest_file,
-              :body => body
-            )
-          else
-            manifest.body = body
-            manifest.save
-          end
-
-          all
-        end
-
-        private
-
-        # Helper to get the manifest file
-        # Contract FogStorage, Location, String => Or[FogFile, nil] TODO: fix this. Expected: File, Actual: <Fog::Storage::AWS::File>
-        def self.get_manifest(s3, s3_location, filename)
-          s3.directories.get(s3_location.bucket, prefix: s3_location.dir).files.get(filename) # TODO: break out into new generic get_file() procedure
-        end
-
-      end
 
       # Helper function to instantiate a new Fog::Storage
       # for S3 based on our config options
@@ -201,8 +61,9 @@ module Sluice
       # +location+:: The location to return files from
       #
       # Returns array of Fog::Storage::AWS::File's
+      Contract FogStorage, Location => ArrayOf[FogFile]
       def list_files(s3, location)
-        files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir).files
+        files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir_as_path).files
 
         files = [] # Can't use a .select because of Ruby deep copy issues (array of non-POROs)
         files_and_dirs.each { |f|
@@ -220,6 +81,7 @@ module Sluice
       # +path+:: S3 path in String form
       #
       # Returns boolean
+      Contract String => Bool
       def is_folder?(path)
         (path.end_with?('_$folder$') || # EMR-created
           path.end_with?('/'))
@@ -232,6 +94,7 @@ module Sluice
       # +path+:: S3 path in String form
       #
       # Returns boolean
+      Contract String => Bool
       def is_file?(path)
         !is_folder?(path)
       end
@@ -244,6 +107,7 @@ module Sluice
       #
       # Returns the basename, or nil if the
       # path is to a folder
+      Contract nil => String
       def get_basename(path)
         if is_folder?(path)
           nil
@@ -263,6 +127,7 @@ module Sluice
       # Parameters:
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to check
+      Contract FogStorage, Location => Bool
       def is_empty?(s3, location)
         list_files(s3, location).length == 0
       end
@@ -620,6 +485,7 @@ module Sluice
                     from_path = from_loc.dir_as_path
                     filepath = file.key
 
+                    # TODO: clean up following https://github.com/snowplow/sluice/issues/25
                     match = if match_regex_or_glob.is_a? NegativeRegex
                               !filepath.match(match_regex_or_glob.regex)
                             else
@@ -629,19 +495,19 @@ module Sluice
                   end
                 end
               end
+              # End of mutex.synchronize
 
-              break unless match
-              break if is_folder?(filepath)
+              # Kill this thread's loop (and thus this thread) if we are complete
+              break if complete
+
+              # Skip processing for a folder or file which doesn't match our regexp or glob
+              next if is_folder?(filepath) or not match
 
               # Name file
               basename = get_basename(filepath)
               next if ignore.include?(basename) # Don't process if in our leave list
 
-              if alter_filename_lambda.class == Proc
-                filename = alter_filename_lambda.call(basename)
-              else
-                filename = basename
-              end
+              filename = rename_file(filepath, basename, alter_filename_lambda)
 
               # What are we doing? Let's determine source and target
               # Note that target excludes bucket name where relevant
@@ -723,6 +589,27 @@ module Sluice
         processed_files # Return the processed files
       end
       module_function :process_files
+
+      # A helper function to rename a file
+      # TODO: fixup lambda to be Maybe[Proc]
+      Contract String, Maybe[String], Or[Proc, Bool] => Maybe[String]
+      def self.rename_file(filepath, basename, lambda=false)
+
+        if lambda.class == Proc
+          case lambda.arity
+          when 2
+            lambda.call(basename, filepath)
+          when 1
+            lambda.call(basename)
+          when 0
+            lambda.call()
+          else
+            raise StorageOperationError "Expect arity of 0, 1 or 2 for alter_filename_lambda, not #{alter_filename_lambda.arity}"
+          end
+        else
+          basename
+        end
+      end
 
       # A helper function to list all files
       # recursively in a folder

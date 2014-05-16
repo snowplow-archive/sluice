@@ -1,4 +1,4 @@
-# Copyright (c) 2012 SnowPlow Analytics Ltd. All rights reserved.
+# Copyright (c) 2012-2014 Snowplow Analytics Ltd. All rights reserved.
 #
 # This program is licensed to you under the Apache License Version 2.0,
 # and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -10,13 +10,13 @@
 # See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 
 # Author::    Alex Dean (mailto:support@snowplowanalytics.com)
-# Copyright:: Copyright (c) 2012 SnowPlow Analytics Ltd
+# Copyright:: Copyright (c) 2012-2014 Snowplow Analytics Ltd
 # License::   Apache License Version 2.0
 
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'sluice'
+require 'sluice/version'
 
 Gem::Specification.new do |gem|
   gem.authors       = ["Alex Dean", "Michael Tibben"]
@@ -34,6 +34,12 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   # Dependencies
-  gem.add_dependency 'fog', '~> 1.14.0'
-  gem.add_dependency 'contracts', '~> 0.2.3'
+  gem.add_dependency 'contracts', '~> 0.4'
+  gem.add_dependency 'fog', '~> 1.22.0'
+
+  gem.add_development_dependency "rspec", "~> 2.14.1"
+  gem.add_development_dependency "rspec-nc"
+  gem.add_development_dependency "guard"
+  gem.add_development_dependency "guard-rspec"
+  gem.add_development_dependency "coveralls"
 end

@@ -13,9 +13,7 @@
 # Copyright:: Copyright (c) 2012-2014 Snowplow Analytics Ltd
 # License::   Apache License Version 2.0
 
-require 'sluice/errors'
-require 'sluice/storage/storage'
-require 'sluice/storage/s3/contracts'
-require 'sluice/storage/s3/location'
-require 'sluice/storage/s3/manifest'
-require 'sluice/storage/s3/s3'
+module Sluice
+  NAME    = "sluice"
+  VERSION = "0.2.0"
+end
