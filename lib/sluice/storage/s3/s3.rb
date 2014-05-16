@@ -462,14 +462,15 @@ module Sluice
                   match = true # Match is implicit in the glob
                 else
 
-                  while !match do
+                  while !complete && !match do
                     if files_to_process.size == 0
                       # S3 batches 1000 files per request.
                       # We load up our array with the files to move
                       files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts)
                       # If we don't have any files after the S3 request, we're complete
                       if files_to_process.size == 0
-                        break
+                        complete = true
+                        next
                       else
                         marker_opts['marker'] = files_to_process.last.key
 
@@ -496,8 +497,11 @@ module Sluice
               end
               # End of mutex.synchronize
 
-              next unless match
-              next if is_folder?(filepath)
+              # Kill this thread's loop (and thus this thread) if we are complete
+              break if complete
+
+              # Skip processing for a folder or file which doesn't match our regexp or glob
+              next if is_folder?(filepath) or not match
 
               # Name file
               basename = get_basename(filepath)
