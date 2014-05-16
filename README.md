@@ -1,4 +1,8 @@
 # Sluice
+[![Gem Version](https://badge.fury.io/rb/sluice.svg)](http://badge.fury.io/rb/sluice)
+[![Build Status](https://travis-ci.org/snowplow/sluice.png)](https://travis-ci.org/snowplow/sluice)
+[![Code Climate](https://codeclimate.com/github/snowplow/sluice.png)](https://codeclimate.com/github/snowplow/sluice)
+[![Coverage Status](https://coveralls.io/repos/snowplow/sluice/badge.png?branch=feature%2F0.2.0)](https://coveralls.io/r/snowplow/sluice?branch=feature%2F0.2.0)
 
 Sluice is a Ruby gem (built with [Bundler] [bundler]) to help you build cloud-friendly ETL (extract, transform, load) processes.
 
@@ -21,7 +25,7 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.1.0'
+    gem 'sluice', '~> 0.2.0'
 
 ## Usage
 
@@ -32,7 +36,7 @@ Rubydoc and usage examples to come.
 To hack on Sluice locally:
 
     $ gem build sluice.gemspec
-    $ sudo gem install sluice-0.1.0.gem
+    $ sudo gem install sluice-0.2.0.gem
 
 To contribute:
 
@@ -48,7 +52,7 @@ Sluice was developed by [Alex Dean] [alexanderdean] ([Snowplow Analytics] [snowp
 
 ## Copyright and license
 
-Sluice is copyright 2012-2013 Snowplow Analytics Ltd.
+Sluice is copyright 2012-2014 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0] [license] (the "License");
 you may not use this software except in compliance with the License.

@@ -9,13 +9,24 @@
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
 
-# Author::    Alex Dean (mailto:support@snowplowanalytics.com)
+# Authors::   Alex Dean (mailto:support@snowplowanalytics.com), Michael Tibben
 # Copyright:: Copyright (c) 2012-2014 Snowplow Analytics Ltd
 # License::   Apache License Version 2.0
 
-require 'sluice/errors'
-require 'sluice/storage/storage'
-require 'sluice/storage/s3/contracts'
-require 'sluice/storage/s3/location'
-require 'sluice/storage/s3/manifest'
-require 'sluice/storage/s3/s3'
+require 'fog'
+require 'fog/aws/models/storage/file'
+
+require 'contracts'
+include Contracts
+
+module Sluice
+  module Storage
+    module S3
+
+      # Aliases for Contracts
+      FogStorage = Fog::Storage::AWS::Real
+      FogFile = Fog::Storage::AWS::File
+
+    end
+  end
+end
