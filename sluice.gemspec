@@ -30,14 +30,15 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = Sluice::NAME
   gem.version       = Sluice::VERSION
+  gem.license       = "Apache-2.0"
   gem.platform      = Gem::Platform::RUBY
   gem.require_paths = ["lib"]
 
   # Dependencies
   gem.add_dependency 'contracts', '~> 0.4'
-  gem.add_dependency 'fog', '~> 1.22.0'
+  gem.add_dependency 'fog', '~> 1.22'
 
-  gem.add_development_dependency "rspec", "~> 2.14.1"
+  gem.add_development_dependency "rspec", "~> 2.14", ">= 2.14.1"
   gem.add_development_dependency "rspec-nc"
   gem.add_development_dependency "guard"
   gem.add_development_dependency "guard-rspec"
