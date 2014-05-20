@@ -466,7 +466,7 @@ module Sluice
                     if files_to_process.size == 0
                       # S3 batches 1000 files per request.
                       # We load up our array with the files to move
-                      files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts)
+                      files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts).to_a
                       # If we don't have any files after the S3 request, we're complete
                       if files_to_process.size == 0
                         complete = true
@@ -593,18 +593,18 @@ module Sluice
       # A helper function to rename a file
       # TODO: fixup lambda to be Maybe[Proc]
       Contract String, Maybe[String], Or[Proc, Bool] => Maybe[String]
-      def self.rename_file(filepath, basename, lambda=false)
+      def self.rename_file(filepath, basename, rename_lambda=false)
 
-        if lambda.class == Proc
-          case lambda.arity
+        if rename_lambda.class == Proc
+          case rename_lambda.arity
           when 2
-            lambda.call(basename, filepath)
+            rename_lambda.call(basename, filepath)
           when 1
-            lambda.call(basename)
+            rename_lambda.call(basename)
           when 0
-            lambda.call()
+            rename_lambda.call()
           else
-            raise StorageOperationError "Expect arity of 0, 1 or 2 for alter_filename_lambda, not #{alter_filename_lambda.arity}"
+            raise StorageOperationError "Expect arity of 0, 1 or 2 for rename_lambda, not #{rename_lambda.arity}"
           end
         else
           basename
