@@ -466,7 +466,7 @@ module Sluice
                     if files_to_process.size == 0
                       # S3 batches 1000 files per request.
                       # We load up our array with the files to move
-                      files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts)
+                      files_to_process = s3.directories.get(from_loc.bucket, :prefix => from_loc.dir).files.all(marker_opts).to_a
                       # If we don't have any files after the S3 request, we're complete
                       if files_to_process.size == 0
                         complete = true

@@ -1,7 +1,7 @@
 Version 0.2.1 (2014-05-20)
 --------------------------
 Renamed lambda and alter_filename_lambda in rename_file (#27)
-Fixed move_files for use in JRuby (#28)                        - TODO
+Fixed move_files for use in JRuby (#28)
 
 Version 0.2.0 (2014-05-16)
 --------------------------
