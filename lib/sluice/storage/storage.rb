@@ -38,13 +38,15 @@ module Sluice
     end
     module_function :files_between
 
-    # Add a trailing slash to a path if missing
+    # Add a trailing slash to a path if missing.
+    # Tolerates a nil path.
     #
     # Parameters:
     # +path+:: path to add a trailing slash to
     def trail_slash(path)
-
-      path[-1].chr != '/' ? path << '/' : path
+      unless path.nil?
+        path[-1].chr != '/' ? path << '/' : path
+      end
     end
     module_function :trail_slash
 
