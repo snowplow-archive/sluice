@@ -25,34 +25,34 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.2.0'
+    gem 'sluice', '~> 0.2.2'
 
 ## Usage
 
 Rubydoc and usage examples to come.
 
-## Hacking and contributing
+## Developer quickstart
 
-To hack on Sluice locally:
+Assuming git, **[Vagrant] [vagrant-install]** and **[VirtualBox] [virtualbox-install]** installed:
 
-    $ gem build sluice.gemspec
-    $ sudo gem install sluice-0.2.0.gem
+```bash
+ host$ git clone https://github.com/snowplow/sluice.git
+ host$ cd sluice
+ host$ vagrant up && vagrant ssh
+guest$ cd /vagrant
+guest$ gem install bundler
+guest$ rspec
+```
 
-To contribute:
+## Publishing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
-
-## Credits and thanks
-
-Sluice was developed by [Alex Dean] [alexanderdean] ([Snowplow Analytics] [snowplow-analytics]) and [Michael Tibben] [mtibben] ([99designs] [99designs]).
+```bash
+ host$ vagrant push
+```
 
 ## Copyright and license
 
-Sluice is copyright 2012-2014 Snowplow Analytics Ltd.
+Sluice is copyright 2012-2015 Snowplow Analytics Ltd.
 
 Licensed under the [Apache License, Version 2.0] [license] (the "License");
 you may not use this software except in compliance with the License.
@@ -72,5 +72,8 @@ limitations under the License.
 
 [emr-etl-runner]: https://github.com/snowplow/snowplow/tree/master/3-enrich/emr-etl-runner
 [storage-loader]: https://github.com/snowplow/snowplow/tree/master/4-storage/storage-loader
+
+[vagrant-install]: http://docs.vagrantup.com/v2/installation/index.html
+[virtualbox-install]: https://www.virtualbox.org/wiki/Downloads
 
 [license]: http://www.apache.org/licenses/LICENSE-2.0
