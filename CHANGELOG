@@ -1,3 +1,11 @@
+Version 0.2.2 (2015-04-08)
+--------------------------
+Stuck Fog dependency to version 1.24 to prevent AWS Regions issue, thanks @epantera! (#33)
+Now tolerates nil passed to trail_slash (#38)
+Added License button to README (#34)
+Added Vagrant quickstart to README (#36)
+Added dedicated Vagrant setup (#35)
+
 Version 0.2.1 (2014-05-20)
 --------------------------
 Renamed lambda and alter_filename_lambda in rename_file (#27)
