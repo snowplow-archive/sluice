@@ -37,7 +37,6 @@ Gem::Specification.new do |gem|
   # Dependencies
   gem.add_dependency 'contracts', '~> 0.4'
   gem.add_dependency 'fog', '1.24'
-  gem.add_dependency 'aws-sdk', '~> 2'
 
   gem.add_development_dependency "rspec", "~> 2.14", ">= 2.14.1"
   gem.add_development_dependency "rspec-nc"
