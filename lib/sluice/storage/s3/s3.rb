@@ -43,6 +43,7 @@ module Sluice
       # +secret_access_key+:: AWS secret access key
       Contract String, String, String => FogStorage
       def new_fog_s3_from(region, access_key_id, secret_access_key)
+        aws_session_token = nil
         if access_key_id == 'iam' and secret_access_key == 'iam'
           credentials_from_role = Aws::InstanceProfileCredentials.new.credentials
           access_key_id = credentials_from_role.access_key_id
