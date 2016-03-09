@@ -42,24 +42,15 @@ module Sluice
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
       # +session_token+:: AWS IAM session token from instance metadata or federated role
-      Contract String, String, String, String => FogStorage
-      def new_fog_s3_from(region, access_key_id, secret_access_key, aws_session_token)
-        if aws_session_token
-          fog = Fog::Storage.new({
-            :provider => 'AWS',
-            :region => region,
-            :aws_access_key_id => access_key_id,
-            :aws_secret_access_key => secret_access_key,
-            :aws_session_token => aws_session_token
-          })
-        else
-          fog = Fog::Storage.new({
-            :provider => 'AWS',
-            :region => region,
-            :aws_access_key_id => access_key_id,
-            :aws_secret_access_key => secret_access_key
-          })
-        end
+      Contract String, String, String, Maybe[String] => FogStorage
+      def new_fog_s3_from(region, access_key_id, secret_access_key, aws_session_token=nil)
+        fog = Fog::Storage.new({
+          :provider => 'AWS',
+          :region => region,
+          :aws_access_key_id => access_key_id,
+          :aws_secret_access_key => secret_access_key,
+          :aws_session_token => aws_session_token
+        })
         fog.sync_clock
         fog
       end
