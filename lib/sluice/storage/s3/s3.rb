@@ -43,20 +43,16 @@ module Sluice
       # +secret_access_key+:: AWS secret access key
       Contract String, String, String => FogStorage
       def new_fog_s3_from(region, access_key_id, secret_access_key)
-        aws_session_token = nil
         if access_key_id == 'iam' and secret_access_key == 'iam'
-          credentials_from_role = Aws::InstanceProfileCredentials.new.credentials
-          access_key_id = credentials_from_role.access_key_id
-          secret_access_key = credentials_from_role.secret_access_key
-          aws_session_token = credentials_from_role.aws_session_token
+          fog = Fog::Storage::AWS.new({:use_iam_profile => true})
+        else
+          fog = Fog::Storage.new({
+            :provider => 'AWS',
+            :region => region,
+            :aws_access_key_id => access_key_id,
+            :aws_secret_access_key => secret_access_key
+          })
         end
-        fog = Fog::Storage.new({
-          :provider => 'AWS',
-          :region => region,
-          :aws_access_key_id => access_key_id,
-          :aws_secret_access_key => secret_access_key,
-          :aws_session_token => aws_session_token
-        })
         fog.sync_clock
         fog
       end
