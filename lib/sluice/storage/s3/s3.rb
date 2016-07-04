@@ -19,11 +19,12 @@ require 'thread'
 require 'timeout'
 
 require 'contracts'
-include Contracts
 
 module Sluice
   module Storage
     module S3
+
+      include Contracts
 
       # TODO: figure out logging instead of puts (https://github.com/snowplow/sluice/issues/2)
       # TODO: consider moving to OO structure (https://github.com/snowplow/sluice/issues/3)

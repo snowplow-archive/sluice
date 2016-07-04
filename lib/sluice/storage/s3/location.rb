@@ -14,7 +14,6 @@
 # License::   Apache License Version 2.0
 
 require 'contracts'
-include Contracts
 
 module Sluice
   module Storage
@@ -25,6 +24,8 @@ module Sluice
       # buckets, maybe we should make that clearer?
       class Location
         
+        include Contracts
+
         attr_reader :bucket, :dir
 
         # Location constructor

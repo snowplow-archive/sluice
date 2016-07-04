@@ -17,11 +17,12 @@ require 'fog'
 require 'fog/aws/models/storage/file'
 
 require 'contracts'
-include Contracts
 
 module Sluice
   module Storage
     module S3
+
+      include Contracts
 
       # Aliases for Contracts
       FogStorage = Fog::Storage::AWS::Real
