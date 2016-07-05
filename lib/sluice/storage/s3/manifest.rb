@@ -16,7 +16,6 @@
 require 'set'
 
 require 'contracts'
-include Contracts
 
 module Sluice
   module Storage
@@ -45,6 +44,9 @@ module Sluice
 
       # Class to read and maintain a manifest.
       class Manifest
+
+        include Contracts
+
         attr_reader :s3_location, :scope, :manifest_file
 
         # Manifest constructor

@@ -35,12 +35,12 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   # Dependencies
-  gem.add_dependency 'contracts', '~> 0.4'
-  gem.add_dependency 'fog', '1.24'
+  gem.add_dependency 'contracts', '~> 0.9'
+  gem.add_dependency 'fog', '1.25'
+
+  gem.add_runtime_dependency 'net-ssh', '~> 2.9.2'
 
   gem.add_development_dependency "rspec", "~> 2.14", ">= 2.14.1"
   gem.add_development_dependency "rspec-nc"
-  gem.add_development_dependency "guard"
-  gem.add_development_dependency "guard-rspec"
   gem.add_development_dependency "coveralls"
 end
