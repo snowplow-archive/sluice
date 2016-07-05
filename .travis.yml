@@ -1,6 +1,9 @@
 language: ruby
 cache: bundler
 
+before_install:
+- gem install bundler -v 1.12.5
+
 rvm:
   - 1.9.3
   - jruby
@@ -8,3 +11,7 @@ rvm:
   - 2.1.0
 
 script: 'bundle exec rspec spec'
+
+sudo: false
+
+bundler_args: --verbose
