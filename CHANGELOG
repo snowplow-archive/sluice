@@ -1,3 +1,12 @@
+Version 0.3.0 (2016-07-05)
+--------------------------
+Update Bundler version in Travis (#45)
+Bump Fog to 1.25.0 (#30)
+Bump Contracts to 0.9 (#37)
+Add runtime dependency on net-ssh to Gemspec (#44)
+Remove guard and guard-rspec gems from Gemspec (#43)
+Move `include Contracts` inside modules and classes (#40)
+
 Version 0.2.2 (2015-04-08)
 --------------------------
 Stuck Fog dependency to version 1.24 to prevent AWS Regions issue, thanks @epantera! (#33)
