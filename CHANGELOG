@@ -1,3 +1,7 @@
+Version 0.3.1 (2016-07-06)
+--------------------------
+Replace module_function everywhere with self (#46)
+
 Version 0.3.0 (2016-07-05)
 --------------------------
 Update Bundler version in Travis (#45)
