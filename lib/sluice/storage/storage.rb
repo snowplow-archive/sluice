@@ -27,7 +27,7 @@ module Sluice
     # +end_date+:: end date
     # +date_format:: format of date in filenames
     # +file_ext:: extension on files (if any)   
-    def files_between(start_date, end_date, date_format, file_ext=nil)
+    def self.files_between(start_date, end_date, date_format, file_ext=nil)
 
       dates = []
       Date.parse(start_date).upto(Date.parse(end_date)) do |day|
@@ -36,19 +36,17 @@ module Sluice
 
       '(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext)
     end
-    module_function :files_between
 
     # Add a trailing slash to a path if missing.
     # Tolerates a nil path.
     #
     # Parameters:
     # +path+:: path to add a trailing slash to
-    def trail_slash(path)
+    def self.trail_slash(path)
       unless path.nil?
         path[-1].chr != '/' ? path << '/' : path
       end
     end
-    module_function :trail_slash
 
     # Find files up to (and including) the given date.
     #
@@ -59,7 +57,7 @@ module Sluice
     # +end_date+:: end date
     # +date_format:: format of date in filenames
     # +file_ext:: extension on files (if any)  
-    def files_up_to(end_date, date_format, file_ext=nil)
+    def self.files_up_to(end_date, date_format, file_ext=nil)
 
       # Let's create a black list from the day
       # after the end_date up to today
@@ -73,7 +71,6 @@ module Sluice
 
       NegativeRegex.new('(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext))
     end
-    module_function :files_up_to
 
     # Find files starting from the given date.
     #
@@ -81,7 +78,7 @@ module Sluice
     # +start_date+:: start date
     # +date_format:: format of date in filenames
     # +file_ext:: extension on files (if any); include period    
-    def files_from(start_date, date_format, file_ext=nil)
+    def self.files_from(start_date, date_format, file_ext=nil)
 
       # Let's create a white list from the start_date to today
       today = Date.today
@@ -93,7 +90,6 @@ module Sluice
 
       '(' + dates.join('|') + ')[^/]+%s$' % regexify(file_ext)
     end
-    module_function :files_from
 
     private
 
@@ -102,10 +98,9 @@ module Sluice
     #
     # Parameters:
     # +file_ext:: the file extension to make regexp friendly
-    def regexify(file_ext)
+    def self.regexify(file_ext)
       file_ext.nil? ? nil : file_ext[0].chr != '.' ? '\\.' << file_ext : '\\' << file_ext
     end
-    module_function :regexify
 
   end
 end

@@ -43,7 +43,7 @@ module Sluice
       # +access_key_id+:: AWS access key ID
       # +secret_access_key+:: AWS secret access key
       Contract String, String, String => FogStorage
-      def new_fog_s3_from(region, access_key_id, secret_access_key)
+      def self.new_fog_s3_from(region, access_key_id, secret_access_key)
         fog = Fog::Storage.new({
           :provider => 'AWS',
           :region => region,
@@ -53,7 +53,6 @@ module Sluice
         fog.sync_clock
         fog
       end
-      module_function :new_fog_s3_from
 
       # Return an array of all Fog::Storage::AWS::File's
       #
@@ -63,7 +62,7 @@ module Sluice
       #
       # Returns array of Fog::Storage::AWS::File's
       Contract FogStorage, Location => ArrayOf[FogFile]
-      def list_files(s3, location)
+      def self.list_files(s3, location)
         files_and_dirs = s3.directories.get(location.bucket, prefix: location.dir_as_path).files
 
         files = [] # Can't use a .select because of Ruby deep copy issues (array of non-POROs)
@@ -74,7 +73,6 @@ module Sluice
         }
         files
       end
-      module_function :list_files
 
       # Whether the given path is a directory or not
       #
@@ -83,11 +81,10 @@ module Sluice
       #
       # Returns boolean
       Contract String => Bool
-      def is_folder?(path)
+      def self.is_folder?(path)
         (path.end_with?('_$folder$') || # EMR-created
           path.end_with?('/'))
       end
-      module_function :is_folder?
 
       # Whether the given path is a file or not
       #
@@ -96,10 +93,9 @@ module Sluice
       #
       # Returns boolean
       Contract String => Bool
-      def is_file?(path)
+      def self.is_file?(path)
         !is_folder?(path)
       end
-      module_function :is_file?
 
       # Returns the basename for the given path
       #
@@ -109,7 +105,7 @@ module Sluice
       # Returns the basename, or nil if the
       # path is to a folder
       Contract nil => String
-      def get_basename(path)
+      def self.get_basename(path)
         if is_folder?(path)
           nil
         else
@@ -121,7 +117,6 @@ module Sluice
           end
         end
       end
-      module_function :get_basename
 
       # Determine if a bucket is empty
       #
@@ -129,10 +124,9 @@ module Sluice
       # +s3+:: A Fog::Storage s3 connection
       # +location+:: The location to check
       Contract FogStorage, Location => Bool
-      def is_empty?(s3, location)
+      def self.is_empty?(s3, location)
         list_files(s3, location).length == 0
       end
-      module_function :is_empty?
 
       # Download files from an S3 location to
       # local storage, concurrently
@@ -142,12 +136,11 @@ module Sluice
       # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to download files from      
       # +to_directory+:: Local directory to copy files to
       # +match_regex+:: a regex string to match the files to delete
-      def download_files(s3, from_files_or_loc, to_directory, match_regex='.+')
+      def self.download_files(s3, from_files_or_loc, to_directory, match_regex='.+')
 
         puts "  downloading #{describe_from(from_files_or_loc)} to #{to_directory}"
         process_files(:download, s3, from_files_or_loc, [], match_regex, to_directory)
       end
-      module_function :download_files    
 
       # Delete files from S3 locations concurrently
       #
@@ -155,12 +148,11 @@ module Sluice
       # +s3+:: A Fog::Storage s3 connection
       # +from_files_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, or S3Location to delete files from
       # +match_regex+:: a regex string to match the files to delete
-      def delete_files(s3, from_files_or_loc, match_regex='.+')
+      def self.delete_files(s3, from_files_or_loc, match_regex='.+')
 
         puts "  deleting #{describe_from(from_files_or_loc)}"
         process_files(:delete, s3, from_files_or_loc, [], match_regex)
       end
-      module_function :delete_files
 
       # Copies files between S3 locations in two different accounts
       #
@@ -181,7 +173,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)            
+      def self.copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying inter-account #{describe_from(from_location)} to #{to_location}"
         processed = []
@@ -193,7 +185,6 @@ module Sluice
 
         processed
       end
-      module_function :copy_files_inter
 
       # Copies files between S3 locations concurrently
       #
@@ -204,12 +195,11 @@ module Sluice
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:copy, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
       end
-      module_function :copy_files
 
       # Copies files between S3 locations maintaining a manifest to
       # avoid copying a file which was copied previously.
@@ -227,7 +217,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  copying with manifest #{describe_from(from_files_or_loc)} to #{to_location}"
         ignore = manifest.get_entries(s3) # Files to leave untouched
@@ -236,7 +226,6 @@ module Sluice
 
         processed
       end
-      module_function :copy_files_manifest
 
       # Moves files between S3 locations in two different accounts
       #
@@ -255,7 +244,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving inter-account #{describe_from(from_location)} to #{to_location}"
         processed = []
@@ -268,7 +257,6 @@ module Sluice
 
         processed
       end
-      module_function :move_files_inter
 
       # Moves files between S3 locations concurrently
       #
@@ -279,12 +267,11 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
 
         puts "  moving #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:move, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
       end
-      module_function :move_files
 
       # Uploads files to S3 locations concurrently
       #
@@ -293,12 +280,11 @@ module Sluice
       # +from_files_or_dir+:: Local array of files or local directory to upload files from
       # +to_location+:: S3Location to upload files to
       # +match_glob+:: a filesystem glob to match the files to upload
-      def upload_files(s3, from_files_or_dir, to_location, match_glob='*')
+      def self.upload_files(s3, from_files_or_dir, to_location, match_glob='*')
 
         puts "  uploading #{describe_from(from_files_or_dir)} to #{to_location}"
         process_files(:upload, s3, from_files_or_dir, [], match_glob, to_location)
       end
-      module_function :upload_files
 
       # Upload a single file to the exact location specified
       # Has no intelligence around filenaming.
@@ -308,7 +294,7 @@ module Sluice
       # +from_file:: A local file path
       # +to_bucket:: The Fog::Directory to upload to
       # +to_file:: The file path to upload to
-      def upload_file(s3, from_file, to_bucket, to_file)
+      def self.upload_file(s3, from_file, to_bucket, to_file)
 
         local_file = File.open(from_file)
 
@@ -320,7 +306,6 @@ module Sluice
 
         local_file.close
       end
-      module_function :upload_file
 
       # Download a single file to the exact path specified
       # Has no intelligence around filenaming.
@@ -330,7 +315,7 @@ module Sluice
       # +s3+:: A Fog::Storage s3 connection
       # +from_file:: A Fog::Storage::AWS::File to download
       # +to_file:: A local file path
-      def download_file(s3, from_file, to_file)
+      def self.download_file(s3, from_file, to_file)
 
         FileUtils.mkdir_p(File.dirname(to_file))
 
@@ -340,7 +325,6 @@ module Sluice
         local_file.write(from_file.body)
         local_file.close
       end
-      module_function :download_file
 
       private
 
@@ -351,14 +335,13 @@ module Sluice
       # +from_files_or_dir_or_loc+:: Array of filepaths or Fog::Storage::AWS::File objects, local directory or S3Location to process files from
       #
       # Returns a log-friendly string
-      def describe_from(from_files_or_dir_or_loc)
+      def self.describe_from(from_files_or_dir_or_loc)
         if from_files_or_dir_or_loc.is_a?(Array)
           "#{from_files_or_dir_or_loc.length} file(s)"
         else
           "files from #{from_files_or_dir_or_loc}"
         end
       end
-      module_function :describe_from
 
       # Concurrent file operations between S3 locations. Supports:
       # - Download
@@ -376,7 +359,7 @@ module Sluice
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_loc_or_dir
-      def process_files(operation, s3, from_files_or_dir_or_loc, ignore=[], match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
+      def self.process_files(operation, s3, from_files_or_dir_or_loc, ignore=[], match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
@@ -589,7 +572,6 @@ module Sluice
 
         processed_files # Return the processed files
       end
-      module_function :process_files
 
       # A helper function to rename a file
       # TODO: fixup lambda to be Maybe[Proc]
@@ -620,12 +602,11 @@ module Sluice
       # +match_regex+:: a regex string to match the files to copy      
       #
       # Returns array of files (no sub-directories)
-      def glob_files(dir, glob)
+      def self.glob_files(dir, glob)
         Dir.glob(File.join(dir, glob)).select { |f|
           File.file?(f) # Drop sub-directories
         }
       end
-      module_function :glob_files
 
       # A helper function to attempt to run a
       # function retries times
@@ -636,7 +617,7 @@ module Sluice
       # +retries+:: Number of retries to attempt
       # +attempt_msg+:: Message to puts on each attempt
       # +failure_msg+:: Message to puts on each failure
-      def retry_x(object, send_args, retries, attempt_msg, failure_msg)
+      def self.retry_x(object, send_args, retries, attempt_msg, failure_msg)
         i = 0
         begin
           Timeout::timeout(TIMEOUT_WAIT) do # In case our operation times out
@@ -651,7 +632,6 @@ module Sluice
           retry
         end
       end
-      module_function :retry_x
 
       # A helper function to prepare destination
       # filenames and paths. This is a bit weird
@@ -667,7 +647,7 @@ module Sluice
       # +flatten+:: strips off any sub-folders below the from_location
       #
       # TODO: this badly needs unit tests
-      def name_file(filepath, new_filename, remove_path=nil, add_path=nil, flatten=false)
+      def self.name_file(filepath, new_filename, remove_path=nil, add_path=nil, flatten=false)
 
         # First, replace the filename in filepath with new one
         dirname = File.dirname(filepath)
@@ -698,7 +678,6 @@ module Sluice
         # Add the new filepath on to the start and return
         return add_path + shortened_filepath
       end
-      module_function :name_file
 
     end
   end
