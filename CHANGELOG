@@ -1,3 +1,7 @@
+Version 0.3.2 (2016-07-07)
+--------------------------
+Fix incorrect contract for Sluice::Storage::S3::get_basename (#47)
+
 Version 0.3.1 (2016-07-06)
 --------------------------
 Replace module_function everywhere with self (#46)
