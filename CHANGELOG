@@ -1,3 +1,7 @@
+Version 0.3.4 (2016-07-09)
+--------------------------
+Fully qualify RETRIES in Sluice::Storage::S3 (#49)
+
 Version 0.3.3 (2016-07-08)
 --------------------------
 Remove problematic contract on Sluice::Storage::S3::rename_file (#48)
