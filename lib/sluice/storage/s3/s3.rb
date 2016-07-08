@@ -575,7 +575,6 @@ module Sluice
 
       # A helper function to rename a file
       # TODO: fixup lambda to be Maybe[Proc]
-      Contract String, Maybe[String], Or[Proc, Bool] => Maybe[String]
       def self.rename_file(filepath, basename, rename_lambda=false)
 
         if rename_lambda.class == Proc
