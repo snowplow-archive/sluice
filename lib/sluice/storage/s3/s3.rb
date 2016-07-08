@@ -523,7 +523,7 @@ module Sluice
                 retry_x(
                   Sluice::Storage::S3,
                   [:upload_file, s3, filepath, to_loc_or_dir.bucket, target],
-                  RETRIES,
+                  Sluice::Storage::S3::RETRIES,
                   "      +/> #{target}",
                   "Problem uploading #{filepath}. Retrying.")
               end                
@@ -533,7 +533,7 @@ module Sluice
                 retry_x(
                   Sluice::Storage::S3,
                   [:download_file, s3, file, target],
-                  RETRIES,
+                  Sluice::Storage::S3::RETRIES,
                   "      +/> #{target}",
                   "Problem downloading #{filepath}. Retrying.")
               end
@@ -543,7 +543,7 @@ module Sluice
                 retry_x(
                   file,
                   [:copy, to_loc_or_dir.bucket, target],
-                  RETRIES,
+                  Sluice::Storage::S3::RETRIES,
                   "      +-> #{to_loc_or_dir.bucket}/#{target}",
                   "Problem copying #{filepath}. Retrying.")
               end
@@ -553,7 +553,7 @@ module Sluice
                 retry_x(
                   file,
                   [:destroy],
-                  RETRIES,
+                  Sluice::Storage::S3::RETRIES,
                   "      x #{source}",
                   "Problem destroying #{filepath}. Retrying.")
               end
