@@ -33,7 +33,7 @@ describe S3 do
       'foobar'
     }
 
-    S3.rename_file('/dir/subdir/file', 'file', lambda=false).should eql 'file'
+    S3.rename_file('/dir/subdir/file', 'file', lambda=nil).should eql 'file'
     S3.rename_file('/dir/subdir/file', nil, foobar).should eql 'foobar'
     S3.rename_file('resources/environments/logs/publish/e-bgp9nsynv7/i-f2b831bd/_var_log_tomcat7_localhost_access_log.txt-1391958061.gz', '_var_log_tomcat7_localhost_access_log.txt-1391958061.gz', concat_subdir).should eql 'i-f2b831bd-_var_log_tomcat7_localhost_access_log.txt-1391958061.gz'
 

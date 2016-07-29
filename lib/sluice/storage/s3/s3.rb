@@ -173,7 +173,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def self.copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.copy_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=nil, flatten=false)
 
         puts "  copying inter-account #{describe_from(from_location)} to #{to_location}"
         processed = []
@@ -195,7 +195,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def self.copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.copy_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=nil, flatten=false)
 
         puts "  copying #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:copy, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
@@ -217,7 +217,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to copy
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def self.copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.copy_files_manifest(s3, manifest, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=nil, flatten=false)
 
         puts "  copying with manifest #{describe_from(from_files_or_loc)} to #{to_location}"
         ignore = manifest.get_entries(s3) # Files to leave untouched
@@ -244,7 +244,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def self.move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.move_files_inter(from_s3, to_s3, from_location, to_location, match_regex='.+', alter_filename_lambda=nil, flatten=false)
 
         puts "  moving inter-account #{describe_from(from_location)} to #{to_location}"
         processed = []
@@ -267,7 +267,7 @@ module Sluice
       # +match_regex+:: a regex string to match the files to move
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_location
-      def self.move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=false, flatten=false)
+      def self.move_files(s3, from_files_or_loc, to_location, match_regex='.+', alter_filename_lambda=nil, flatten=false)
 
         puts "  moving #{describe_from(from_files_or_loc)} to #{to_location}"
         process_files(:move, s3, from_files_or_loc, [], match_regex, to_location, alter_filename_lambda, flatten)
@@ -359,7 +359,7 @@ module Sluice
       # +to_loc_or_dir+:: S3Location or local directory to process files to
       # +alter_filename_lambda+:: lambda to alter the written filename
       # +flatten+:: strips off any sub-folders below the from_loc_or_dir
-      def self.process_files(operation, s3, from_files_or_dir_or_loc, ignore=[], match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=false, flatten=false)
+      def self.process_files(operation, s3, from_files_or_dir_or_loc, ignore=[], match_regex_or_glob='.+', to_loc_or_dir=nil, alter_filename_lambda=nil, flatten=false)
 
         # Validate that the file operation makes sense
         case operation
@@ -574,10 +574,11 @@ module Sluice
       end
 
       # A helper function to rename a file
-      # TODO: fixup lambda to be Maybe[Proc]
-      def self.rename_file(filepath, basename, rename_lambda=false)
+      def self.rename_file(filepath, basename, rename_lambda=nil)
 
-        if rename_lambda.class == Proc
+        if rename_lambda.nil?
+          basename
+        else
           case rename_lambda.arity
           when 2
             rename_lambda.call(basename, filepath)
@@ -588,8 +589,6 @@ module Sluice
           else
             raise StorageOperationError "Expect arity of 0, 1 or 2 for rename_lambda, not #{rename_lambda.arity}"
           end
-        else
-          basename
         end
       end
 
