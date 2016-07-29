@@ -1,3 +1,8 @@
+Version 0.4.0 (2016-07-29)
+--------------------------
+Represent absence of rename_files lambda with nil, not false (#51)
+Properly namespace the use of NegativeRegex (#50)
+
 Version 0.3.4 (2016-07-09)
 --------------------------
 Fully qualify RETRIES in Sluice::Storage::S3 (#49)

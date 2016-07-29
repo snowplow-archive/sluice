@@ -26,7 +26,7 @@ Sluice has been extracted from a pair of Ruby ETL applications built by the [Sno
 
 Or in your Gemfile:
 
-    gem 'sluice', '~> 0.3.4'
+    gem 'sluice', '~> 0.4.0'
 
 ## Usage
 
