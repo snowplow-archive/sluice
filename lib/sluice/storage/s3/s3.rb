@@ -470,7 +470,7 @@ module Sluice
                     filepath = file.key
 
                     # TODO: clean up following https://github.com/snowplow/sluice/issues/25
-                    match = if match_regex_or_glob.is_a? NegativeRegex
+                    match = if match_regex_or_glob.is_a? Sluice::Storage::NegativeRegex
                               !filepath.match(match_regex_or_glob.regex)
                             else
                               filepath.match(match_regex_or_glob)
